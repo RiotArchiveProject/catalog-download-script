@@ -1,0 +1,24 @@
+PixelButts: Creator, operator, and maintainer of the Riot Archive Project, and this downloader script.
+	https://x.com/PixelButts
+	https://bsky.app/profile/pixel-butts.bsky.social
+	Riot Archive Project Discord invite: https://discord.gg/pjMv95NWW5
+
+Special thanks to the following people:
+
+	moonshadow565: rman toolset and various utilities, the first of 2 core toolsets of this project, consistently updating it to keep this project going, and a long list of helpful wisdom at 4am
+		https://github.com/moonshadow565/rman
+	
+	Morilli: ManifestDownloader, and the second of 2 core toolsets, original intake scripts and utilities for LoL, LoR, Valorant, Riot Client, and fixing hachoir
+		https://github.com/Morilli/ManifestDownloader
+		https://github.com/Morilli/riot-manifests
+	
+	yretenai: DepotArchiver (legit thank you for this), making an alternative to AssetStudio for Riot Forge projects, extra utilities, and the donations to the project for so long so early on
+		https://github.com/yretenai
+	
+	Ray: For handling the events in the client and backing up those for community dragon, when I couldn't
+		https://universe.communitydragon.org/
+	
+	r000t: For helping pick the perfect case to upgrade the archive to, this case is insane, as well as some advice on AI handling
+		https://www.jonsbo.com/en/products/N5Black.html
+	
+	SkinSpotlights: You do so much stuff it's legitimately incredible. Thank you for all the help over the years, no matter how trivial (or dumb) my questions have been
