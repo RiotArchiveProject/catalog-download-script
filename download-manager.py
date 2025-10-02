@@ -309,7 +309,7 @@ def run_rman_dl(project, manifest_path, outdir, langs=None, file_filter=None, us
         cmd += ["-l", langs]
     if file_filter:
         cmd += ["-p", file_filter]
-    cmd += ["--cdn", f"http://{project}.secure.dyn.riotcdn.net/channels/public"]
+    cmd += ["--cdn", f"https://{project}.secure.dyn.riotcdn.net/channels/public"]
     if use_cache:
         cmd += ["--cache", str(cache_path)]
     cmd += [str(manifest_path), str(outdir)]
