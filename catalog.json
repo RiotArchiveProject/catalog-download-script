@@ -8932,6 +8932,15 @@
       "timestamp": "2021-05-10T22:42:00+00:00",
       "size": 165409
     },
+    "99D5CBD45323313B": {
+      "version": "120.0.3.3844_99D5CBD45323313B_71",
+      "realms": [
+        "KeystoneFoundationBetaWin"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-11-04T17:27:32+00:00",
+      "size": 353103
+    },
     "9A45EE227EADE056": {
       "version": "36.0.0.3866646_9A45EE227EADE056_24",
       "realms": [
@@ -9787,6 +9796,15 @@
       "timestamp": "2021-03-04T01:13:40+00:00",
       "size": 117660
     },
+    "B233EC965D2ECADD": {
+      "version": "120.0.0.0_B233EC965D2ECADD_55",
+      "realms": [
+        "KeystoneFoundationLiveMac"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-11-04T19:20:37+00:00",
+      "size": 372438
+    },
     "B238C09D2CD8E062": {
       "version": "65.0.0.0_B238C09D2CD8E062_48",
       "realms": [
@@ -9939,6 +9957,15 @@
       "platform": "Windows",
       "timestamp": "2025-10-29T18:12:47+00:00",
       "size": 352619
+    },
+    "B5A0EAA90B634784": {
+      "version": "120.0.0.0_B5A0EAA90B634784_72",
+      "realms": [
+        "KeystoneFoundationBetaMac"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-11-04T17:25:41+00:00",
+      "size": 372630
     },
     "B5A2BFAF732F50A8": {
       "version": "40.16.0.4066802_B5A2BFAF732F50A8_25",
@@ -12253,6 +12280,15 @@
       "timestamp": "2021-07-06T17:17:29+00:00",
       "size": 169105
     },
+    "F651CAD98305EFF5": {
+      "version": "120.0.3.3844_F651CAD98305EFF5_55",
+      "realms": [
+        "KeystoneFoundationLiveWin"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-11-04T19:23:55+00:00",
+      "size": 353122
+    },
     "F66845F7314B195C": {
       "version": "40.14.0.4009523_F66845F7314B195C_30",
       "realms": [
@@ -12794,6 +12830,16 @@
       "platform": "Windows",
       "timestamp": "2025-10-09T20:50:16+00:00",
       "size": 2898070
+    },
+    "F867F3CE16EFCE24": {
+      "version": "3975294",
+      "realms": [
+        "lionriot.prod",
+        "prod_client"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-11-04T18:59:45+00:00",
+      "size": 3507
     }
   },
   "lol": {
@@ -33755,6 +33801,15 @@
       "platform": "iOS",
       "timestamp": "2022-07-27T23:00:07+00:00",
       "size": 36098
+    },
+    "196EF3758BD6D855": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-11-04T19:49:48+00:00",
+      "size": 5540373
     },
     "196F49D8B8DA6FB4": {
       "version": "12.11.4469344",
@@ -55208,6 +55263,15 @@
       "timestamp": "2020-08-06T19:52:24+00:00",
       "size": 29025
     },
+    "340381C227500C4B": {
+      "version": "15.22.7234896",
+      "realms": [
+        "OC1"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-10-31T19:26:57+00:00",
+      "size": 5579236
+    },
     "340CF6ABF7EBB58D": {
       "version": "15.3.6540407",
       "realms": [
@@ -57181,8 +57245,13 @@
     "3636474D19651015": {
       "version": "15.22.7231955",
       "realms": [
+        "JP1",
+        "KR",
+        "LIVESTAGING1",
         "NA1",
+        "OC1",
         "PBE1",
+        "SG2",
         "TW2",
         "VN2"
       ],
@@ -88600,6 +88669,15 @@
       "timestamp": "2023-04-28T00:55:01+00:00",
       "size": 18802853
     },
+    "5BC013144B39F313": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-11-04T12:55:14+00:00",
+      "size": 28608161
+    },
     "5BC5B48018E7437B": {
       "version": "14.19.6218328",
       "realms": [
@@ -92403,8 +92481,13 @@
     "606E854349F72994": {
       "version": "15.22.7231955",
       "realms": [
+        "JP1",
+        "KR",
+        "LIVESTAGING1",
         "NA1",
+        "OC1",
         "PBE1",
+        "SG2",
         "TW2",
         "VN2"
       ],
@@ -113790,6 +113873,15 @@
       "timestamp": "2024-05-09T22:40:52+00:00",
       "size": 22552293
     },
+    "7A65D7C2E7E8782D": {
+      "version": "15.22.7231955",
+      "realms": [
+        "JP1"
+      ],
+      "platform": "Mac",
+      "timestamp": "2025-10-30T22:22:54+00:00",
+      "size": 5579195
+    },
     "7A6CDE22613D6177": {
       "version": "11.7.3650762",
       "realms": [
@@ -130764,6 +130856,15 @@
       "platform": "Mac",
       "timestamp": "2023-05-02T12:00:58+00:00",
       "size": 3914165
+    },
+    "8EED773ABB0B90BD": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Neutral",
+      "timestamp": "2025-11-04T12:56:16+00:00",
+      "size": 28422193
     },
     "8EF1002D7040EF15": {
       "version": "9.6.2674221",
@@ -157546,6 +157647,15 @@
       "timestamp": "2024-09-16T12:27:32+00:00",
       "size": 4723183
     },
+    "AF893719989AEF84": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-11-04T12:55:47+00:00",
+      "size": 28292187
+    },
     "AF896A2CBE167FDC": {
       "version": "9.23.2986432",
       "realms": [
@@ -157821,6 +157931,15 @@
       "platform": "iOS",
       "timestamp": "2023-10-03T01:04:12+00:00",
       "size": 31628
+    },
+    "AFEBEDCFB7F1A2CC": {
+      "version": "15.22.7234896",
+      "realms": [
+        "OC1"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-10-31T19:26:48+00:00",
+      "size": 5518145
     },
     "AFED26F16BCEE3C6": {
       "version": "13.18.5289784",
@@ -166883,6 +167002,15 @@
       "timestamp": "2022-04-29T11:57:15+00:00",
       "size": 2347745
     },
+    "BB87D5FB2334E4F4": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-11-04T19:49:48+00:00",
+      "size": 5518723
+    },
     "BB89EE03BAA25A5E": {
       "version": "13.6.4969821",
       "realms": [
@@ -166992,6 +167120,15 @@
       "platform": "Android",
       "timestamp": "2022-02-15T12:45:26+00:00",
       "size": 30978
+    },
+    "BBB2B8890E01A851": {
+      "version": "15.23.7240903",
+      "realms": [
+        "PBE1"
+      ],
+      "platform": "Neutral",
+      "timestamp": "2025-11-04T12:43:34+00:00",
+      "size": 5470395
     },
     "BBB2CA81C0F88C2D": {
       "version": "14.1.5522930",
@@ -167931,8 +168068,13 @@
     "BCE83A6C3B8AF8E9": {
       "version": "15.22.7231955",
       "realms": [
+        "JP1",
+        "KR",
+        "LIVESTAGING1",
         "NA1",
+        "OC1",
         "PBE1",
+        "SG2",
         "TW2",
         "VN2"
       ],
@@ -185316,6 +185458,15 @@
       "platform": "Mac",
       "timestamp": "2022-03-31T23:08:01+00:00",
       "size": 14768300
+    },
+    "D2B241FAD6E88651": {
+      "version": "15.22.7231955",
+      "realms": [
+        "JP1"
+      ],
+      "platform": "Windows",
+      "timestamp": "2025-10-30T22:22:45+00:00",
+      "size": 5546848
     },
     "D2B49A75595CE931": {
       "version": "14.7.5701685",
@@ -207720,8 +207871,13 @@
     "EDBC0BE221FECCCF": {
       "version": "15.22.7231955",
       "realms": [
+        "JP1",
+        "KR",
+        "LIVESTAGING1",
         "NA1",
+        "OC1",
         "PBE1",
+        "SG2",
         "TW2",
         "VN2"
       ],

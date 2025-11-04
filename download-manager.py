@@ -4,7 +4,52 @@ from pathlib import Path
 import plistlib
 
 ROOT = Path(__file__).resolve().parent
-CATALOG = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
+
+def load_catalog():
+    global CATALOG
+    catalog_path = ROOT / "catalog.json"
+    if catalog_path.exists():
+        CATALOG = json.loads(catalog_path.read_text(encoding="utf-8"))
+    else:
+        CATALOG = {}
+
+CATALOG = {}
+load_catalog()
+
+def update_catalog():
+    url = "https://raw.githubusercontent.com/RiotArchiveProject/catalog-download-script/refs/heads/main/catalog.json"
+    local_path = ROOT / "catalog.json"
+
+    try:
+        r = requests.get(url, timeout=30)
+        r.raise_for_status()
+        remote_data = r.content
+    except Exception as ex:
+        print(f"[Error] Failed to fetch remote catalog: {ex}")
+        print("[Info] Reloading local catalog instead.")
+        load_catalog()
+        return
+
+    # Compare with local file if it exists
+    if local_path.exists():
+        local_data = local_path.read_bytes()
+        if local_data == remote_data:
+            print("[Info] Catalog is already up to date. Reloading local copy.")
+            load_catalog()
+            return
+        else:
+            print("[Update] New catalog version found. Updating...")
+
+    # Write new catalog
+    try:
+        local_path.write_bytes(remote_data)
+        print("[OK] Catalog updated successfully.")
+    except Exception as ex:
+        print(f"[Error] Could not write catalog file: {ex}")
+        return
+
+    # Reload into memory
+    load_catalog()
 
 TOOLS_DIR = ROOT / "Tools"
 RMAN_DL = TOOLS_DIR / "rman-dl.exe"
@@ -77,7 +122,6 @@ PROJECT_HELP_TEXT = """
 
 [ares] - Ares
   - This project is very early valorant when it was still called Project A, and no longer exists on Riot's servers.
-      Due to this, it is mentioned but not present in the catalog, but may be when this is resolved.
 
 [bacon] - Legends of Runeterra
   - This project has two halves. To have a completed build you must have both halves.
@@ -242,11 +286,20 @@ def download_manifest(project, manifest_id):
     url = f"https://{project}.secure.dyn.riotcdn.net/channels/public/releases/{manifest_id}.manifest"
     dest = CACHE_DIR / project / "releases" / f"{manifest_id}.manifest"
     dest.parent.mkdir(parents=True, exist_ok=True)
+
     if not dest.exists():
-        r = requests.get(url, timeout=30)
-        r.raise_for_status()
-        dest.write_bytes(r.content)
-        print(f"[OK] Downloaded manifest to {dest}")
+        try:
+            r = requests.get(url, timeout=30)
+            if r.status_code == 404:
+                print(f"[Warn] Manifest {manifest_id} for project '{project}' not found (404). Skipping.")
+                return None
+            r.raise_for_status()
+            dest.write_bytes(r.content)
+            print(f"[OK] Downloaded manifest to {dest}")
+        except requests.exceptions.RequestException as ex:
+            print(f"[Error] Failed to download manifest {manifest_id} for project '{project}': {ex}")
+            return None
+
     return dest
 
 def prompt_languages(project, manifest_id):
@@ -327,88 +380,12 @@ def human_mb(size_val):
     return format_mb(size_val)
 
 def show_stats():
-    term_width = shutil.get_terminal_size((120, 20)).columns
-    gap = 4
-
-    cache_data = {}
-    for proj in CATALOG.keys():
-        bundle_dir = CACHE_DIR / proj / "bundles"
-        releases_dir = CACHE_DIR / proj / "releases"
-        size = sum(f.stat().st_size for f in bundle_dir.glob("*.bundle")) if bundle_dir.exists() else 0
-        count = sum(1 for _ in releases_dir.glob("*.manifest")) if releases_dir.exists() else 0
-        cache_data[proj] = (size, count)
-
-    cache_total_size = sum(s for s, _ in cache_data.values())
-    cache_total_count = sum(c for _, c in cache_data.values())
-
-    builds_data = {}
-    for proj in CATALOG.keys():
-        proj_dir = BUILDS_DIR / proj
-        if proj_dir.exists():
-            build_dirs = [d for d in proj_dir.iterdir() if d.is_dir()]
-            count = len(build_dirs)
-            size = sum(f.stat().st_size for d in build_dirs for f in d.rglob("*") if f.is_file())
-        else:
-            size, count = 0, 0
-        builds_data[proj] = (size, count)
-
-    builds_total_size = sum(s for s, _ in builds_data.values())
-    builds_total_count = sum(c for _, c in builds_data.values())
-
-    left_title = "[Cache Statistics]"
-    right_title = "[Builds Statistics]"
-    left_totals = f"Total cache size: {format_mb(cache_total_size)}   Total cached count: {cache_total_count}"
-    right_totals = f"Total size: {format_mb(builds_total_size)}   Total count: {builds_total_count}"
-
-    left_proj_max = max(
-        (len(f"  {p}: Size {format_mb(s)}, Count {c}") for p, (s, c) in cache_data.items()),
-        default=0
-    )
-    right_proj_max = max(
-        (len(f"  {p}: Size {format_mb(s)}, Count {c}") for p, (s, c) in builds_data.items()),
-        default=0
-    )
-    left_width = max(len(left_title), len(left_totals), left_proj_max)
-    right_width = max(len(right_title), len(right_totals), right_proj_max)
-
-    if left_width + gap + right_width > term_width:
-        right_width = max(20, term_width - left_width - gap)
-
-    def print_row(left, right):
-        print(f"{left:<{left_width}}{' ' * gap}{right:<{right_width}}")
-
-    print_row(left_title, right_title)
-    print_row(left_totals, right_totals)
-
-    for proj in CATALOG.keys():
-        c_size, c_count = cache_data[proj]
-        b_size, b_count = builds_data[proj]
-        left = f"  {proj}: Size {format_mb(c_size)}, Count {c_count}"
-        right = f"  {proj}: Size {format_mb(b_size)}, Count {b_count}"
-        print_row(left, right)
-
+    # stubbed
+    return
+    
 def check_cache_size(project, threshold_mb=25600):
-    bundle_dir = CACHE_DIR / project / "bundles"
-    size = sum(f.stat().st_size for f in bundle_dir.glob("*.bundle")) if bundle_dir.exists() else 0
-    mb = size / 1024 / 1024
-
-    if mb > threshold_mb:
-        while True:
-            ans = input_with_help(
-                f"[Cache] {project} cache is {format_mb(size)}, exceeds {threshold_mb} MB. Clean? (y/N): "
-            ).strip().lower()
-            if ans == "__REDRAW__":
-                clear_screen()
-                print(f"[Cache] {project} cache is {format_mb(size)}, exceeds {threshold_mb} MB. Clean? (y/N): ")
-                continue
-            break
-        if ans == "y":
-            for f in bundle_dir.glob("*.bundle"):
-                try:
-                    f.unlink()
-                except Exception as ex:
-                    print(f"[Warn] Could not delete {f}: {ex}")
-            print("[Cache] Cleaned.")
+    # stubbed
+    return
 
 # ---------- Unified Search (catalog or cache) ----------
 def draw_project_selection(projects):
@@ -616,9 +593,13 @@ def handle_downloads(project, results, mode="d"):
 
     for mid, entry in results:
         mpath = download_manifest(project, mid)
+        if mpath is None:
+            # Skip this manifest and continue with the next
+            continue
+    
         if mode == "d":
             langs_list = list(base_langs_list)
-
+    
             # --- Project-specific rules ---
             if project == "lol" and langs_list:
                 p = entry.get("platform", "").lower()
@@ -626,10 +607,10 @@ def handle_downloads(project, results, mode="d"):
                     langs_list.append("windows")
                 elif "mac" in p and "macos" not in langs_list:
                     langs_list.append("macos")
-
+    
             if project == "valorant" and "all_loc" in langs_list:
                 langs_list = ["none", "all_loc"]
-
+    
             lang_str = "|".join(langs_list) if langs_list else None
             outdir = build_output_dir(project, mid, entry, lang_str)
             if lang_str:
@@ -646,6 +627,7 @@ def draw_main_menu():
     clear_screen()
     show_stats()
     print("\n=== Main Menu ===   [Type 'h' for Help | 'k' for Project Help | 'c' for Credits]")
+    print("0) Update catalog")
     print("1) Search catalog")
     print("2) View cache")
     print("3) Exit")
@@ -658,6 +640,11 @@ def main_menu():
         if choice == "__REDRAW__":
             continue
         choice = choice.strip()
+
+        if choice == "0":
+            update_catalog()
+            input("Press Enter to return to the main menu...")
+            continue
 
         if choice == "1":
             project, results, realm, plat = search_data(source="catalog")
