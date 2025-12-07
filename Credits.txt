@@ -1,7 +1,9 @@
-PixelButts: Creator, operator, and maintainer of the Riot Archive Project, and this downloader script.
-	https://x.com/PixelButts
-	https://bsky.app/profile/pixel-butts.bsky.social
-	Riot Archive Project Discord invite: https://discord.gg/pjMv95NWW5
+Creator, operator, and maintainer of the Riot Archive Project, and this downloader script:
+	PixelButts
+		https://x.com/PixelButts
+		https://bsky.app/profile/pixel-butts.bsky.social
+		Riot Archive Project Discord invite: https://discord.gg/pjMv95NWW5
+		https://github.com/RiotArchiveProject
 
 Special thanks to the following people:
 
