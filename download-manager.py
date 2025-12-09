@@ -15,6 +15,36 @@ def load_catalog():
 CATALOG = {}
 load_catalog()
 
+def download_tools():
+    TOOLS_DIR.mkdir(parents=True, exist_ok=True)
+
+    tools = {
+        "https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-dl.exe": TOOLS_DIR / "rman-dl.exe",
+        "https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-ls.exe": TOOLS_DIR / "rman-ls.exe",
+    }
+
+    for url, local_path in tools.items():
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            remote_bytes = r.content
+        except Exception as ex:
+            print(f"[Error] Failed to download {local_path.name}: {ex}")
+            continue
+
+        try:
+            if local_path.exists():
+                local_bytes = local_path.read_bytes()
+                if local_bytes == remote_bytes:
+                    print(f"[Info] {local_path.name} is already up to date.")
+                    continue
+                else:
+                    print(f"[Update] New version of {local_path.name} found. Updating...")
+            local_path.write_bytes(remote_bytes)
+            print(f"[OK] Downloaded {local_path.name}")
+        except Exception as ex:
+            print(f"[Error] Could not write {local_path.name}: {ex}")
+
 def update_catalog():
     url = "https://raw.githubusercontent.com/RiotArchiveProject/catalog-download-script/refs/heads/main/catalog.json"
     local_path = ROOT / "catalog.json"
@@ -26,12 +56,14 @@ def update_catalog():
         print(f"[Error] Failed to fetch remote catalog: {ex}")
         print("[Info] Reloading local catalog instead.")
         load_catalog()
+        download_tools()
         return
     if local_path.exists():
         local_data = local_path.read_bytes()
         if local_data == remote_data:
             print("[Info] Catalog is already up to date. Reloading local copy.")
             load_catalog()
+            download_tools()
             return
         else:
             print("[Update] New catalog version found. Updating...")
@@ -40,8 +72,10 @@ def update_catalog():
         print("[OK] Catalog updated successfully.")
     except Exception as ex:
         print(f"[Error] Could not write catalog file: {ex}")
+        download_tools()
         return
     load_catalog()
+    download_tools()
 
 TOOLS_DIR = ROOT / "Tools"
 RMAN_DL = TOOLS_DIR / "rman-dl.exe"
@@ -51,9 +85,9 @@ CACHE_DIR = ROOT / "Cache"
 ARCHIVE_DIR = ROOT / "Archive"
 BUILDS_DIR = ROOT / "Builds"
 
-HELP_KEY = "h"
-PROJECT_HELP_KEY = "k"
-CREDITS_KEY = "c"
+HELP_KEYS = ("F1",)
+PROJECT_HELP_KEYS = ("F2",)
+CREDITS_KEYS = ("F3",)
 
 HELP_TEXT = """
 ================= Downloader Help =================
@@ -64,11 +98,11 @@ HELP_TEXT = """
   - There will be bugs and issues. If you find any, or want to leave feedback, please check the Credits section.
 
 [Main Menu Selections]
-  1) Download Mode               - browse all known manifests from catalog.json.
-  2) Cache Mode                  - browse only manifests you have cached locally.
-  3) Archive Mode                - brows the local archive data if applicable.
-  4) Download or Update catalog  - update's the catalog.json if applicable.
-  0) Exit                        - quit the program.
+  1) Download Mode                         - browse all known manifests from catalog.json.
+  2) Cache Mode                            - browse only manifests you have cached locally.
+  3) Archive Mode                          - brows the local archive data if applicable.
+  4) Download or Update Catalog and Tools  - update's the catalog.json if applicable.
+  0) Exit                                  - quit the program.
 
 [Project Selection]
   - Choose which project (lol, valorant, etc.) you want to browse.
@@ -81,8 +115,8 @@ HELP_TEXT = """
 
 [Realm Filtering]
   - Realms are environment tags (e.g. NA1, PBE1).
-  - You can select ANY or a specific realm.
-      Example: choose "NA1" to only see entries deployed to NA1.
+  - You can filter by "OR" or "AND", and select various tags to refine your search
+      Example: NA1|PBE1 - only 
 
 [Language Filtering]
   - When downloading, you can specify language tags.
@@ -178,17 +212,21 @@ def show_credits():
     clear_screen()
 
 def input_with_help(prompt=""):
-    val = input(prompt).strip().lower()
-    if val == HELP_KEY:
+    val = input(prompt).strip()
+    if not val:
+        return val
+    up = val.upper()
+    if up in HELP_KEYS:
         show_help()
         return "__REDRAW__"
-    if val == PROJECT_HELP_KEY:
+    if up in PROJECT_HELP_KEYS:
         show_project_help()
         return "__REDRAW__"
-    if val == CREDITS_KEY:
+    if up in CREDITS_KEYS:
         show_credits()
         return "__REDRAW__"
-    return val
+    return val.lower()
+
 
 SELECTED_MANIFESTS = {}
 
@@ -254,6 +292,89 @@ def print_indexed_grid(options, per_row=5, zero_label="ANY"):
             print()
     if len(options) % per_row != 0:
         print()
+
+def select_realms_interactive(available_realms, current_mode="OR", current_set=None):
+    def parse_indices(s, max_idx):
+        s = s.strip()
+        if not s:
+            return set()
+        toks = [t.strip() for t in s.split(",") if t.strip()]
+        idxs = set()
+        for t in toks:
+            if "-" in t:
+                try:
+                    a, b = t.split("-", 1)
+                    a_i = int(a); b_i = int(b)
+                    if a_i <= 0 or b_i <= 0:
+                        continue
+                    for i in range(min(a_i, b_i), max(a_i, b_i) + 1):
+                        if 0 <= i <= max_idx:
+                            idxs.add(i)
+                except Exception:
+                    continue
+            else:
+                try:
+                    i = int(t)
+                    if 0 <= i <= max_idx:
+                        idxs.add(i)
+                except Exception:
+                    continue
+        return idxs
+
+    mode = current_mode or "OR"
+    selected = set(current_set) if current_set else set()
+    max_idx = len(available_realms)
+    while True:
+        clear_screen()
+        print("\n--- Realm Selection ---")
+        print(f"Mode: {mode}")
+        if selected:
+            print("Selected:", ", ".join(sorted(selected)))
+        else:
+            print("Selected: (ANY)")
+        print("\nAvailable realms:")
+        print_indexed_grid(available_realms, per_row=5, zero_label="ANY")
+        print("\nControls:")
+        print("  Enter indices (e.g., 1,3-5) to toggle selection")
+        print("  0 = ANY (clear selection)    a = select all    n = clear selection")
+        print("  m = toggle mode    d = done (apply)    c = cancel (leave unchanged)")
+        choice = input_with_help("Choose: ").strip().lower()
+        if choice == "__REDRAW__":
+            continue
+        if choice == "c":
+            return None, None
+        if choice == "d":
+            return mode, (selected if selected else None)
+        if choice == "a":
+            selected = set(available_realms)
+            continue
+        if choice == "n":
+            selected.clear()
+            continue
+        if choice == "m":
+            mode = "AND" if mode == "OR" else "OR"
+            continue
+        idxs = parse_indices(choice, max_idx)
+        if not idxs:
+            print("Invalid input. Enter indices, '0', 'a', 'n', 'm', 'd', or 'c'.")
+            input_with_help("Press Enter to continue...")
+            continue
+        if 0 in idxs:
+            if len(idxs) > 1:
+                print("If you choose 0 (ANY) you cannot select other indices at the same time.")
+                input_with_help("Press Enter to continue...")
+                continue
+            selected.clear()
+            continue
+        for i in sorted(idxs):
+            idx0 = i - 1
+            if 0 <= idx0 < len(available_realms):
+                realm = available_realms[idx0]
+                if realm in selected:
+                    selected.remove(realm)
+                else:
+                    selected.add(realm)
+        continue
 
 def print_aligned_grid(items, per_row=6):
     if not items:
@@ -576,7 +697,7 @@ def check_cache_size(project, threshold_mb=25600):
 
 def draw_project_selection(projects):
     clear_screen()
-    print("\n[Project Selection]   [Type 'h' for Help | 'k' for Project Help | 'c' for Credits]")
+    print("\n[Project Selection]   [Type 'F1' for Help | 'F2' for Project Help | 'F3' for Credits]")
     for i, p in enumerate(projects, 1):
         print(f"  {i}) {p}")
 
@@ -594,7 +715,8 @@ def search_data(source="catalog", page_size=20):
         input_with_help("Press Enter to return...")
         return None, [], None, None
     regex = ""
-    realm = None
+    realm_mode = "OR"
+    realm_set = None
     plat = None
     page = 0
     draw_project_selection(projects)
@@ -617,13 +739,22 @@ def search_data(source="catalog", page_size=20):
         for mid, entry in items:
             if regex and not re.search(regex, entry.get("version", "")):
                 continue
-            if realm and realm not in entry.get("realms", []):
-                continue
+            if realm_set:
+                entry_realms = set(entry.get("realms", []) or [])
+                if realm_mode == "OR":
+                    if entry_realms.isdisjoint(realm_set):
+                        continue
+                else:
+                    if not realm_set.issubset(entry_realms):
+                        continue
             if plat and entry.get("platform") != plat:
                 continue
             results.append((mid, entry))
         results.sort(key=lambda x: x[1].get("timestamp", ""), reverse=True)
-        print(f"\n[Current Filter] source={source}, project={project}, version_regex='{regex or 'ALL'}', platform={plat or 'ANY'}, realm={realm or 'ANY'}")
+        realm_display = "ANY"
+        if realm_set:
+            realm_display = f"{realm_mode}:{'|'.join(sorted(realm_set))}"
+        print(f"\n[Current Filter] source={source}, project={project}, version_regex='{regex or 'ALL'}', platform={plat or 'ANY'}, realm={realm_display}")
         print(f"[Info] Results after filters: {len(results)}\n")
         start = page * page_size
         end = start + page_size
@@ -660,7 +791,7 @@ def search_data(source="catalog", page_size=20):
             )
             print(line)
         total_pages = (len(results) - 1) // page_size + 1 if results else 1
-        print(f"\n[Page {page+1}/{total_pages}]   [Type 'h' for Help | 'k' for Project Help | 'c' for Credits]\n")
+        print(f"\n[Page {page+1}/{total_pages}]   [Type F1 for Help | F2 for Project Help | F3 for Credits]\n")
         if selection:
             if len(selection) > 25:
                 print(f"Selected manifests: {len(selection)}")
@@ -701,13 +832,14 @@ def search_data(source="catalog", page_size=20):
                 input_with_help("Press Enter to continue...")
                 continue
             selected_results = [item for item in results if item[0] in selection]
-            return project, selected_results, realm, plat
+            realm_return = realm_display if realm_set else None
+            return project, selected_results, realm_return, plat
         if choice == "j":
             clear_selection_for(source, project)
             draw_project_selection(projects)
             idx = ask_number("Select project: ", 1, len(projects), redraw=lambda: draw_project_selection(projects))
             project = projects[idx - 1]
-            regex, realm, plat, page = "", None, None, 0
+            regex, realm_mode, realm_set, plat, page = "", "OR", None, None, 0
             selection = set(get_selection(source, project))
             continue
         if choice == "v":
@@ -727,10 +859,12 @@ def search_data(source="catalog", page_size=20):
                 print("[Warn] No realms available.")
                 input_with_help("Press Enter to continue...")
             else:
-                print("Available realms:")
-                print_indexed_grid(realms, per_row=5, zero_label="ANY")
-                ridx = ask_number("Select realm (0=ANY): ", 0, len(realms))
-                realm = None if ridx == 0 else realms[ridx - 1]
+                new_mode, new_set = select_realms_interactive(realms, current_mode=realm_mode, current_set=realm_set)
+                if new_mode is None and new_set is None:
+                    pass
+                else:
+                    realm_mode = new_mode
+                    realm_set = set(new_set) if new_set else None
             page = 0
             clear_selection_for(source, project)
             selection = set()
@@ -752,7 +886,7 @@ def search_data(source="catalog", page_size=20):
         if choice == "x":
             clear_selection_for(source, project)
             clear_screen()
-            return project, [], realm, plat
+            return project, [], None, plat
         if choice.isdigit():
             num = int(choice)
             if 1 <= num <= len(results):
@@ -834,14 +968,14 @@ def confirm_and_compute_sizes_loop(project, manifest_ids, parsed, use_archive=Fa
         if total_bytes >= 100 * 1024**3:
             print("\n[Warn] Total estimated size is >= 100 GB. Proceed with caution.")
         while True:
-            confirm = input_with_help("Proceed with download? (y to proceed / r to retry filters / n to cancel selection): ").strip().lower()
+            confirm = input_with_help("Proceed with download? (y to proceed / r to retry filters / c to cancel selection): ").strip().lower()
             if confirm == "__REDRAW__":
                 continue
             if confirm == "y":
                 return True, selected_langs, file_filter
             if confirm == "r":
                 break
-            if confirm == "n":
+            if confirm == "c":
                 print("Cancelled. Returning to selection.")
                 return False, selected_langs, file_filter
             print("Please enter 'y' to proceed, 'r' to retry filters, or 'n' to cancel.")
@@ -887,16 +1021,18 @@ def handle_downloads(project, results, mode="download", use_archive=False):
             print(f"[Info] No language filter applied for {mid} (downloading all)")
         run_rman_dl(project, mpath, outdir, langs=lang_str, file_filter=file_filter, mode=mode)
     check_cache_size(project)
+    print("\nDownload complete.")
+    input("Press Enter to return to the main menu...")
     clear_screen()
 
 def draw_main_menu():
     clear_screen()
     clear_all_selections()
-    print("\n=== Main Menu ===   [Type 'h' for Help | 'k' for Project Help | 'c' for Credits]")
+    print("\n=== Main Menu ===   [Type 'F1' for Help | 'F2' for Project Help | 'F3' for Credits]")
     print("1) Download Mode")
     print("2) Cache Mode")
     print("3) Archive Mode")
-    print("4) Download or Update catalog")
+    print("4) Download or Update Catalog and Tools")
     print("0) Exit")
 
 
