@@ -174,12 +174,11 @@ CREDITS_TEXT = """
 
 This downloader script was created and maintained by:
   - PixelButts
-  - Riot Archive Project Discord: https://discord.gg/pjMv95NWW5
   - https://x.com/PixelButts
   - https://bsky.app/profile/pixel-butts.bsky.social
 
-The tools this downloader script utilizes are created by:
-  - moonshadow565 (https://github.com/moonshadow565/rman)
+The tools this downloader script utilizes:
+  - https://github.com/moonshadow565/rman
 
 Special thanks to:
   - Everyone who provided feedback and improvements
