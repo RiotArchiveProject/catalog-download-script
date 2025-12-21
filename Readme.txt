@@ -36,4 +36,16 @@
 	To update the catalog, use the option present in the main menu, or manually overwrite it.
 
 
-
+# Archive setup
+	
+	If you have the archive backups saved, place them in a folder called "Archive" alongside the download script, matching the structure below.
+	
+		download-manager.py
+		Archive
+			<project>
+				bundles
+					<project>.bundle
+				releases
+					1234567890ABCDEF.manifest
+					
+	The archive is effectively a read-only cache, and allows for larger bulk operations that the other modes prohibit.
