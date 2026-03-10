@@ -80,6 +80,9 @@ def update_catalog():
 TOOLS_DIR = ROOT / "Tools"
 RMAN_DL = TOOLS_DIR / "rman-dl.exe"
 RMAN_LS = TOOLS_DIR / "rman-ls.exe"
+# Do not change these values due to a bug
+RMAN_DL_JOBS = 3
+RMAN_DL_CDN_WORKERS = 3
 
 CACHE_DIR = ROOT / "Cache"
 ARCHIVE_DIR = ROOT / "Archive"
@@ -454,12 +457,17 @@ def build_output_dir(project, manifest_id, entry, langs=None):
         (outdir.parent / f"{base}_filter.txt").write_text(langs, encoding="utf-8")
     return outdir
 
-def run_rman_dl(project, manifest_path, outdir, langs=None, file_filter=None, mode="download"):
+def run_rman_dl(project, manifest_path, outdir, langs=None, file_filter=None, mode="download", jobs=None, cdn_workers=None):
+    if jobs is None:
+        jobs = RMAN_DL_JOBS
+    if cdn_workers is None:
+        cdn_workers = RMAN_DL_CDN_WORKERS
     cmd = [str(RMAN_DL)]
     if langs:
         cmd += ["-l", langs]
     if file_filter:
         cmd += ["-p", file_filter]
+
     if mode == "archive":
         cmd += ["--cache-readonly"]
         cache_path = ARCHIVE_DIR / project / "bundles" / f"{project}.bundle"
@@ -471,8 +479,18 @@ def run_rman_dl(project, manifest_path, outdir, langs=None, file_filter=None, mo
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cmd += ["--cache", str(cache_path)]
     cmd += [str(manifest_path), str(outdir)]
+    try:
+        j_val = int(jobs)
+    except Exception:
+        j_val = RMAN_DL_JOBS
+    try:
+        c_val = int(cdn_workers)
+    except Exception:
+        c_val = RMAN_DL_CDN_WORKERS
+    cmd += ["--jobs", str(j_val), "--cdn-workers", str(c_val)]
     print("[CMD]", " ".join(cmd))
     subprocess.run(cmd, cwd=ROOT)
+
 
 def run_rman_ls(manifest_path, filter_lang=None, filter_path=None, fmt=None, timeout=None):
     if not RMAN_LS.exists():
