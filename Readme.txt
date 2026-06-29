@@ -1,11 +1,11 @@
 # What does this toolset do?
 
 	The script attempts to streamline the process of downloading older versions of Riot Games projects
-	It utilizes Python, and rman (https://github.com/moonshadow565/rman)
+	It utilizes Python, and rman. Check credits for links to codebases.
 
 # Installation
 
-	Once unpacked, place these files and tools into any directory you want, and then install the following software
+	Once unpacked, place these files and tools into any directory you want, then install the following software
 
 		Required software
 
@@ -13,16 +13,12 @@
 			
 				Download it from here: 
 					https://www.python.org/downloads/release/python-3106/
+					
 				Install with the following settings
 					Install py launcher
 					Associate files with Python
 					Add Python to environment variables
 					(Optional) install for all users
-				Once python has installed successfully, open command prompt (cmd), and type the following command:
-				
-					pip install requests
-				
-				Once `requests` is installed, the python setup is complete
 				
 			MSVC++ Redistributable packages. These are needed for rman to function correctly
 				
@@ -31,21 +27,20 @@
 
 # Post-Install
 
-	If you have followed the installation instructions, doubleclick download-manager.py and follow the on-screen prompts.
+	If you have followed the installation instructions, doubleclick download-manager.py and it should open.
 
 	To update the catalog, use the option present in the main menu, or manually overwrite it.
 
-
 # Archive setup
 	
-	If you have the archive backups saved, place them in a folder called "Archive" alongside the download script, matching the structure below.
+	If you have the archive backups saved, place them in the matching the structure below.
 	
 		download-manager.py
-		Archive
-			<project>
-				bundles
+		Archive\
+			<project>\
+				bundles\
 					<project>.bundle
-				releases
+				releases\
 					1234567890ABCDEF.manifest
-					
-	The archive is effectively a read-only cache, and allows for larger bulk operations that the other modes prohibit.
+						
+	The archive is effectively a local, read-only cache.

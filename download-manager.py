@@ -1,1145 +1,1463 @@
 #!/usr/bin/env python3
-import json, re, subprocess, requests, os, shutil
-from pathlib import Path
+import sys, subprocess, importlib, shutil, os, time, tkinter as _tk, tkinter.messagebox as _mb
 
-ROOT = Path(__file__).resolve().parent
+def _ensure_packages(packages, gui_log_callback=None):
+    missing=[]
+    for pkg,mod in packages:
+        try:
+            importlib.import_module(mod)
+        except Exception:
+            missing.append((pkg,mod))
+    if not missing:
+        return True
+    try:
+        root=_tk.Tk()
+        root.withdraw()
+        ok=_mb.askyesno("Install dependencies",f"The following packages are required and missing:\n\n" + "\n".join(p for p,_ in missing) + "\n\nInstall now?")
+        root.destroy()
+    except Exception:
+        ok=True
+    if not ok:
+        return False
+    for pkg,mod in missing:
+        cmd=[sys.executable,"-m","pip","install",pkg]
+        if os.name!="nt":
+            cmd.insert(3,"--user")
+        try:
+            proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+            out_lines=[]
+            while True:
+                line=proc.stdout.readline()
+                if not line and proc.poll() is not None:
+                    break
+                if line:
+                    out_lines.append(line.rstrip())
+                    if gui_log_callback:
+                        try:
+                            gui_log_callback(line.rstrip())
+                        except Exception:
+                            pass
+                    else:
+                        print(line.rstrip())
+            rc=proc.wait()
+            if rc!=0:
+                if gui_log_callback:
+                    gui_log_callback(f"[Error] pip install returned {rc} for {pkg}")
+                return False
+            time.sleep(0.2)
+            importlib.invalidate_caches()
+            importlib.import_module(mod)
+        except Exception as ex:
+            if gui_log_callback:
+                gui_log_callback(f"[Error] Failed to install {pkg}: {ex}")
+            return False
+    return True
+
+# call early with list of (pip-name, import-name)
+if not _ensure_packages([("requests","requests")]):
+    try:
+        _tk.Tk().withdraw()
+        _mb.showerror("Missing dependencies","Required Python packages could not be installed. Please install them manually and restart the app.")
+    except Exception:
+        print("Required packages missing; please install 'requests' and restart.")
+    sys.exit(1)
+
+import json,re,threading,requests,subprocess,os,shutil,signal
+from pathlib import Path
+from datetime import datetime
+import tkinter as tk
+from tkinter import ttk,messagebox
+import tkinter.font as tkfont
+
+ROOT=Path(__file__).resolve().parent
+TOOLS_DIR=ROOT/"Tools"
+CACHE_DIR=ROOT/"Cache"
+ARCHIVE_DIR=ROOT/"Archive"
+BUILDS_DIR=ROOT/"Builds"
+CATALOG_PATH=ROOT/"catalog.json"
+PREFS_PATH=ROOT/"preferences.json"
+
+RMAN_DL=TOOLS_DIR/"rman-dl.exe"
+RMAN_LS=TOOLS_DIR/"rman-ls.exe"
+
+RMAN_DL_JOBS=3
+RMAN_DL_CDN_WORKERS=3
+
+TOOL_URLS={
+"https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-dl.exe":TOOLS_DIR/"rman-dl.exe",
+"https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-ls.exe":TOOLS_DIR/"rman-ls.exe",
+}
+CATALOG_URL="https://raw.githubusercontent.com/RiotArchiveProject/catalog-download-script/refs/heads/main/catalog.json"
+
+for d in (TOOLS_DIR,CACHE_DIR,ARCHIVE_DIR,BUILDS_DIR):
+    d.mkdir(parents=True,exist_ok=True)
 
 def load_catalog():
-    global CATALOG
-    catalog_path = ROOT / "catalog.json"
-    if catalog_path.exists():
-        CATALOG = json.loads(catalog_path.read_text(encoding="utf-8"))
-    else:
-        CATALOG = {}
-
-CATALOG = {}
-load_catalog()
-
-def download_tools():
-    TOOLS_DIR.mkdir(parents=True, exist_ok=True)
-
-    tools = {
-        "https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-dl.exe": TOOLS_DIR / "rman-dl.exe",
-        "https://github.com/RiotArchiveProject/catalog-download-script/raw/refs/heads/main/Tools/rman-ls.exe": TOOLS_DIR / "rman-ls.exe",
-    }
-
-    for url, local_path in tools.items():
+    if CATALOG_PATH.exists():
         try:
-            r = requests.get(url, timeout=30)
-            r.raise_for_status()
-            remote_bytes = r.content
-        except Exception as ex:
-            print(f"[Error] Failed to download {local_path.name}: {ex}")
-            continue
+            return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
 
-        try:
-            if local_path.exists():
-                local_bytes = local_path.read_bytes()
-                if local_bytes == remote_bytes:
-                    print(f"[Info] {local_path.name} is already up to date.")
-                    continue
-                else:
-                    print(f"[Update] New version of {local_path.name} found. Updating...")
-            local_path.write_bytes(remote_bytes)
-            print(f"[OK] Downloaded {local_path.name}")
-        except Exception as ex:
-            print(f"[Error] Could not write {local_path.name}: {ex}")
-
-def update_catalog():
-    url = "https://raw.githubusercontent.com/RiotArchiveProject/catalog-download-script/refs/heads/main/catalog.json"
-    local_path = ROOT / "catalog.json"
+def save_catalog_bytes(data_bytes: bytes):
     try:
-        r = requests.get(url, timeout=30)
-        r.raise_for_status()
-        remote_data = r.content
-    except Exception as ex:
-        print(f"[Error] Failed to fetch remote catalog: {ex}")
-        print("[Info] Reloading local catalog instead.")
-        load_catalog()
-        download_tools()
-        return
-    if local_path.exists():
-        local_data = local_path.read_bytes()
-        if local_data == remote_data:
-            print("[Info] Catalog is already up to date. Reloading local copy.")
-            load_catalog()
-            download_tools()
-            return
-        else:
-            print("[Update] New catalog version found. Updating...")
-    try:
-        local_path.write_bytes(remote_data)
-        print("[OK] Catalog updated successfully.")
-    except Exception as ex:
-        print(f"[Error] Could not write catalog file: {ex}")
-        download_tools()
-        return
-    load_catalog()
-    download_tools()
-
-TOOLS_DIR = ROOT / "Tools"
-RMAN_DL = TOOLS_DIR / "rman-dl.exe"
-RMAN_LS = TOOLS_DIR / "rman-ls.exe"
-# Do not change these values due to a bug
-RMAN_DL_JOBS = 3
-RMAN_DL_CDN_WORKERS = 3
-
-CACHE_DIR = ROOT / "Cache"
-ARCHIVE_DIR = ROOT / "Archive"
-BUILDS_DIR = ROOT / "Builds"
-
-HELP_KEYS = ("F1",)
-PROJECT_HELP_KEYS = ("F2",)
-CREDITS_KEYS = ("F3",)
-
-HELP_TEXT = """
-================= Downloader Help =================
-
-[General]
-  - This script allows you to download current or older revisions of various projects by Riot Games.
-  - This will NOT help you run them, but does simplify the process significantly.
-  - There will be bugs and issues. If you find any, or want to leave feedback, please check the Credits section.
-
-[Main Menu Selections]
-  1) Download Mode                         - browse all known manifests from catalog.json.
-  2) Cache Mode                            - browse only manifests you have cached locally.
-  3) Archive Mode                          - brows the local archive data if applicable.
-  4) Download or Update Catalog and Tools  - update's the catalog.json if applicable.
-  0) Exit                                  - quit the program.
-
-[Project Selection]
-  - Choose which project (lol, valorant, etc.) you want to browse.
-  - Each project has its own manifests, platforms, and realms.
-
-[Version Filtering]
-  - You can enter a regex to match versions.
-      Example: ^13\.  - matches all versions starting with 13.
-      Example: 3744   - matches any version containing 3744.
-
-[Realm Filtering]
-  - Realms are environment tags (e.g. NA1, PBE1).
-  - You can filter by "OR" or "AND", and select various tags to refine your search
-      Example: NA1|PBE1 - only 
-
-[Language Filtering]
-  - When downloading, you can specify language tags.
-      Example: en_US|fr_FR  - download English and French only.
-  - Some tags are not languages but are content tags, such as "none", "mature" or "video_hq".
-
-[File Filtering]
-  - Optional regex to restrict which files are downloaded.
-      Example: \.exe$   - only download .exe files.
-      Example: Ahri.*   - only files starting with RiotClient.
-
-===================================================
-"""
-
-PROJECT_HELP_TEXT = """
-================= Project-Specific Notes =================
-
-[ares] - Ares
-  - This project is very early valorant when it was still called Project A, and no longer exists on Riot's servers.
-
-[bacon] - Legends of Runeterra
-  - This project has two halves. To have a completed build you must have both halves.
-      Client - Contains the main exe. Very small manifest. Usually less than 1 megabyte.
-      Data - Contians all the card data, assets, sounds, video files, etc. Very large manifest.
-  - Later revisions of this script will attempt to automate this structure. For now it must be made manually
-  - The full build structure is as follows (using a default, live realm install as reference)
-      C:\Riot Games\LoR\live\Game
-      C:\Riot Games\LoR\live\PatcherData\PatchableFiles
-
-[ks-foundation] - Riot Client
-  - No additional notes for this project
-
-[lion] - 2XKO
-  - Version strings are very long, and may change in the future.
-      Hotfixes use their changelist revision rather than their full string currently.
-
-[lol] - League of Legends/TFT
-  - LoL has two parts and they act independently of each other, so you do not need both.
-      Client - Contains the Store, Splash Art, Queues, anything that is NOT "in-game". Manifest is marginally smaller than Game.
-      Game - Contains Champions, Maps, Sounds, VO, anything you see "in-game". Manifest is typically 2-3x bigger than the Client.
-  - Typically most users will be looking for Windows entries. Filter them by platform and realm as needed.
-  - This project has Windows, Mac, iOS, Android, and "Neutral" platforms.
-      Neutral is used for content that is shared between platforms. They contain no executables.
-  - LoL and TFT are shipped together.
-      If you are looking for TFT Mobile assets, filter by "Neutral" and it will usually be the smaller manifest.
-  
-[valorant] - Valorant
-  - This is primarily PC-focused, but does contain hotfixes for PlayStation 5 and Xbox Series X.
-
-==========================================================
-"""
-
-CREDITS_TEXT = """
-================= Credits =================
-
-This downloader script was created and maintained by:
-  - PixelButts
-  - https://x.com/PixelButts
-  - https://bsky.app/profile/pixel-butts.bsky.social
-
-The tools this downloader script utilizes:
-  - https://github.com/moonshadow565/rman
-
-Special thanks to:
-  - Everyone who provided feedback and improvements
-
-To leave feedback or report a bug, you can reach me here:
-  - https://github.com/RiotArchiveProject/catalog-download-script
-
-===========================================
-"""
-
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-def show_help():
-    clear_screen()
-    print(HELP_TEXT)
-    input("Press Enter to return...")
-    clear_screen()
-
-def show_project_help():
-    clear_screen()
-    print(PROJECT_HELP_TEXT)
-    input("Press Enter to return...")
-    clear_screen()
-
-def show_credits():
-    clear_screen()
-    print(CREDITS_TEXT)
-    input("Press Enter to return...")
-    clear_screen()
-
-def input_with_help(prompt=""):
-    val = input(prompt).strip()
-    if not val:
-        return val
-    up = val.upper()
-    if up in HELP_KEYS:
-        show_help()
-        return "__REDRAW__"
-    if up in PROJECT_HELP_KEYS:
-        show_project_help()
-        return "__REDRAW__"
-    if up in CREDITS_KEYS:
-        show_credits()
-        return "__REDRAW__"
-    return val.lower()
-
-
-SELECTED_MANIFESTS = {}
-
-def _sel_key(source, project):
-    return (source, project)
-
-def get_selection(source, project):
-    return SELECTED_MANIFESTS.get(_sel_key(source, project), set())
-
-def set_selection(source, project, selection_set):
-    if selection_set:
-        SELECTED_MANIFESTS[_sel_key(source, project)] = set(selection_set)
-    else:
-        SELECTED_MANIFESTS.pop(_sel_key(source, project), None)
-
-def clear_selection_for(source, project):
-    SELECTED_MANIFESTS.pop(_sel_key(source, project), None)
-
-def clear_all_selections():
-    SELECTED_MANIFESTS.clear()
-
-def selection_exceeds_limit(source=None, count=0, limit=100):
-    if source == "archive":
+        CATALOG_PATH.write_bytes(data_bytes)
+        return True
+    except Exception:
         return False
-    return count > limit
 
-def set_console_size(width=180, height=48):
+def load_prefs():
+    if PREFS_PATH.exists():
+        try:
+            return json.loads(PREFS_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def save_prefs(prefs):
     try:
-        os.system(f'mode con: cols={width} lines={height}')
+        PREFS_PATH.write_text(json.dumps(prefs,indent=2),encoding="utf-8")
+    except Exception:
+        pass
+
+def normalize_platform(entry):
+    if not isinstance(entry,dict):
+        return "unknown"
+    plats=entry.get("platforms")
+    if isinstance(plats,(list,tuple)) and plats:
+        return ",".join(str(p) for p in plats)
+    plat=entry.get("platform")
+    if plat:
+        return str(plat)
+    return "unknown"
+
+def parse_timestamp(ts):
+    try:
+        return datetime.fromisoformat(ts)
     except Exception:
         try:
-            cols, rows = shutil.get_terminal_size()
-            print(f"[Info] Current terminal size: {cols}x{rows}")
+            return datetime.strptime(ts,"%Y-%m-%dT%H:%M:%S")
+        except Exception:
+            return None
+
+def sanitize_version(ver):
+    return re.sub(r'[:*?"<>|]',"",str(ver or "unknown"))
+
+def sanitize_artifact(a):
+    return re.sub(r'[:*?"<>|/\\]',"",str(a or "unknown"))
+
+def human_mb(bytes_val):
+    try:
+        mb=int(bytes_val)/1024/1024
+    except Exception:
+        return str(bytes_val)
+    return f"{mb:.2f} MB" if mb<10 else f"{mb:.1f} MB"
+
+def human_readable_bytes(n):
+    try:
+        n=int(n)
+    except Exception:
+        return str(n)
+    if n<1024:
+        return f"{n} B"
+    if n<1024**2:
+        return f"{n/1024:.1f} KB"
+    if n<1024**3:
+        return f"{n/1024**2:.2f} MB"
+    return f"{n/1024**3:.2f} GB"
+
+def download_tools_and_catalog(progress_callback=None):
+    TOOLS_DIR.mkdir(parents=True,exist_ok=True)
+    success=True
+    try:
+        if progress_callback:
+            progress_callback("Fetching catalog.json...")
+        r=requests.get(CATALOG_URL,timeout=30)
+        r.raise_for_status()
+        save_catalog_bytes(r.content)
+        if progress_callback:
+            progress_callback("catalog.json updated.")
+    except Exception as ex:
+        success=False
+        if progress_callback:
+            progress_callback(f"[Warn] Could not fetch catalog: {ex}")
+    for url,local_path in TOOL_URLS.items():
+        try:
+            if progress_callback:
+                progress_callback(f"Downloading {local_path.name}...")
+            r=requests.get(url,timeout=30)
+            r.raise_for_status()
+            remote_bytes=r.content
+            if local_path.exists():
+                local_bytes=local_path.read_bytes()
+                if local_bytes==remote_bytes:
+                    if progress_callback:
+                        progress_callback(f"{local_path.name} up to date.")
+                    continue
+            local_path.write_bytes(remote_bytes)
+            if progress_callback:
+                progress_callback(f"{local_path.name} downloaded.")
+        except Exception as ex:
+            success=False
+            if progress_callback:
+                progress_callback(f"[Warn] Failed to download {local_path.name}: {ex}")
+    return success
+
+def download_manifest(project: str, manifest_id: str, dest_base=CACHE_DIR):
+    url=f"https://{project}.secure.dyn.riotcdn.net/channels/public/releases/{manifest_id}.manifest"
+    dest=dest_base/project/"releases"/f"{manifest_id}.manifest"
+    dest.parent.mkdir(parents=True,exist_ok=True)
+    if dest.exists():
+        return dest
+    try:
+        r=requests.get(url,timeout=30)
+        if r.status_code==404:
+            return None
+        r.raise_for_status()
+        dest.write_bytes(r.content)
+        return dest
+    except Exception:
+        return None
+
+def run_rman_dl_cmd(project,manifest_path:Path,outdir:Path,langs=None,file_filter=None,mode="download",multithreaded=False,jobs=None,cdn_workers=None):
+    if not RMAN_DL.exists():
+        raise FileNotFoundError(f"rman-dl not found at {RMAN_DL}")
+    cmd=[str(RMAN_DL)]
+    if langs:
+        cmd+=["-l",langs]
+    if file_filter:
+        cmd+=["-p",file_filter]
+    if mode=="archive":
+        cmd+=["--cache-readonly"]
+        cache_path=ARCHIVE_DIR/project/"bundles"/f"{project}.bundle"
+        cache_path.parent.mkdir(parents=True,exist_ok=True)
+        cmd+=["--cache",str(cache_path)]
+    else:
+        cmd+=["--cdn",f"https://{project}.secure.dyn.riotcdn.net/channels/public"]
+        cache_path=CACHE_DIR/project/"bundles"/f"{project}-cache.bundle"
+        cache_path.parent.mkdir(parents=True,exist_ok=True)
+        cmd+=["--cache",str(cache_path)]
+    cmd+=[str(manifest_path),str(outdir)]
+    if multithreaded:
+        try:
+            j_val=int(jobs) if jobs is not None else RMAN_DL_JOBS
+        except Exception:
+            j_val=RMAN_DL_JOBS
+        try:
+            c_val=int(cdn_workers) if cdn_workers is not None else RMAN_DL_CDN_WORKERS
+        except Exception:
+            c_val=RMAN_DL_CDN_WORKERS
+        cmd+=["--jobs",str(j_val),"--cdn-workers",str(c_val)]
+    proc=subprocess.Popen(cmd,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
+    return proc
+
+def run_rman_ls_cmd(manifest_path:Path,filter_lang=None,filter_path=None,fmt=None,timeout=30):
+    if not RMAN_LS.exists():
+        return None
+    cmd=[str(RMAN_LS)]
+    if fmt:
+        cmd+=["--format",fmt]
+    if filter_lang:
+        cmd+=["-l",filter_lang]
+    if filter_path:
+        cmd+=["-p",filter_path]
+    cmd+=[str(manifest_path)]
+    try:
+        proc=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=ROOT)
+        out,err=proc.communicate(timeout=timeout)
+        if proc.returncode!=0:
+            return None
+        lines=[ln.strip() for ln in out.splitlines() if ln.strip()]
+        return lines
+    except Exception:
+        return None
+
+def compute_manifest_size_from_metadata(project,manifest_id,selected_langs=None,file_filter_regex=None):
+    base=CACHE_DIR
+    meta=base/project/"metadata"/f"{manifest_id}.txt"
+    if not meta.exists():
+        return None
+    try:
+        text=meta.read_text(encoding="utf-8")
+    except Exception:
+        return None
+    selected_set=None
+    if selected_langs:
+        if isinstance(selected_langs,str):
+            toks=[t.strip() for t in selected_langs.split("|") if t.strip()]
+        else:
+            toks=[t.strip() for t in selected_langs if isinstance(t,str) and t.strip()]
+        if toks:
+            selected_set={t.lower() for t in toks}
+    file_re=None
+    if file_filter_regex:
+        try:
+            file_re=re.compile(file_filter_regex,re.IGNORECASE)
+        except re.error:
+            file_re=None
+    total=0
+    for ln in text.splitlines():
+        ln=ln.strip()
+        if not ln:
+            continue
+        parts=ln.rsplit(",",3)
+        if len(parts)==4:
+            path_field=parts[0].strip()
+            size_field=parts[1].strip()
+            langs_field=parts[3].strip()
+        else:
+            parts2=ln.rsplit(",",1)
+            if len(parts2)!=2:
+                continue
+            rest,lang_field=parts2
+            rest_parts=rest.rsplit(",",1)
+            if len(rest_parts)!=2:
+                continue
+            path_field=rest_parts[0].strip()
+            size_field=rest_parts[1].strip()
+            langs_field=lang_field.strip()
+        if file_re and not file_re.search(path_field):
+            continue
+        try:
+            size_val=int(size_field)
+        except Exception:
+            continue
+        if selected_set:
+            if not langs_field:
+                lang_tokens=["none"]
+            else:
+                lang_tokens=[t.strip() for t in re.split(r'[;,\|,]',langs_field) if t and t.strip()]
+                if not lang_tokens:
+                    lang_tokens=["none"]
+            lang_tokens_lc={t.lower() for t in lang_tokens}
+            if lang_tokens_lc.isdisjoint(selected_set):
+                continue
+        total+=size_val
+    return total
+
+class DownloadManagerGUI(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Download Manager")
+        self.geometry("1200x760")
+        self.minsize(900,520)
+        self.catalog={}
+        self.prefs=load_prefs()
+        self.current_mode="download"
+        self.selected_project=None
+        self.filtered_entries=[]
+        self.sort_state={"col":"Timestamp","reverse":True}
+        self.marked={}
+        self.page_size_options=[100,500,1000,"All"]
+        self.page_size=tk.StringVar(value=str(self.prefs.get("page_size",100)))
+        self.current_page=1
+        self.total_pages=1
+        self._preserve_selection=None
+        self.running_procs=[]
+        self.multithread_var=tk.BooleanVar(value=self.prefs.get("multithreaded",False))
+        # abort control flags
+        self._abort_all_requested=False
+        self._abort_current_requested=False
+        # notes save debounce id
+        self._notes_save_after_id=None
+        self._build_ui()
+        self._load_window_prefs()
+        self._load_catalog_into_ui()
+        self.bind("<Configure>",self._on_window_resize)
+        self.protocol("WM_DELETE_WINDOW",self._on_close)
+
+    def _build_ui(self):
+        top_toolbar=ttk.Frame(self)
+        top_toolbar.pack(side=tk.TOP,fill=tk.X)
+        self.update_btn=ttk.Button(top_toolbar,text="Update Catalog & Tools",command=self._on_update_catalog)
+        self.update_btn.pack(side=tk.LEFT,padx=4,pady=4)
+        ttk.Button(top_toolbar,text="Credits",command=self._on_credits).pack(side=tk.LEFT,padx=4,pady=4)
+        ttk.Label(top_toolbar,text="Mode:").pack(side=tk.LEFT,padx=(10,2))
+        self.mode_var=tk.StringVar(value="download")
+        mode_combo=ttk.Combobox(top_toolbar,textvariable=self.mode_var,values=["download","archive"],state="readonly",width=10)
+        mode_combo.pack(side=tk.LEFT,padx=2)
+        mode_combo.bind("<<ComboboxSelected>>",self._on_mode_change)
+        ttk.Button(top_toolbar,text="Select All",command=self._select_all_filtered).pack(side=tk.LEFT,padx=6)
+        ttk.Button(top_toolbar,text="Clear Selections",command=self._clear_selections).pack(side=tk.LEFT,padx=6)
+        ttk.Button(top_toolbar,text="Download Manifest(s)",command=self._on_download_manifest).pack(side=tk.LEFT,padx=6)
+        ttk.Button(top_toolbar,text="Download Data",command=self._on_run_rman_dl).pack(side=tk.LEFT,padx=6)
+        # Abort (Current) and Abort (All)
+        ttk.Button(top_toolbar,text="Abort (Current)",command=self._abort_current_proc).pack(side=tk.LEFT,padx=6)
+        ttk.Button(top_toolbar,text="Abort (All)",command=self._abort_all_procs).pack(side=tk.LEFT,padx=6)
+        ttk.Checkbutton(top_toolbar,text="Multithreaded",variable=self.multithread_var).pack(side=tk.LEFT,padx=6)
+
+        self.main_pane=ttk.PanedWindow(self,orient=tk.HORIZONTAL)
+        self.main_pane.pack(fill=tk.BOTH,expand=True)
+
+        left_frame=ttk.Frame(self.main_pane,width=200)
+        self.main_pane.add(left_frame,weight=1)
+        mid_frame=ttk.Frame(self.main_pane)
+        self.main_pane.add(mid_frame,weight=3)
+        right_frame=ttk.Frame(self.main_pane,width=320)
+        self.main_pane.add(right_frame,weight=2)
+
+        ttk.Label(left_frame,text="Projects").pack(anchor=tk.W,padx=6,pady=(6,0))
+        proj_frame=ttk.Frame(left_frame)
+        proj_frame.pack(fill=tk.BOTH,expand=True,padx=6,pady=6)
+        self.project_listbox=tk.Listbox(proj_frame,exportselection=False)
+        self.project_listbox.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        self.project_listbox.bind("<<ListboxSelect>>",lambda e:self._on_project_select())
+        proj_scroll=ttk.Scrollbar(proj_frame,orient=tk.VERTICAL,command=self.project_listbox.yview)
+        proj_scroll.pack(side=tk.RIGHT,fill=tk.Y)
+        self.project_listbox.config(yscrollcommand=proj_scroll.set)
+
+        mid_top=ttk.Frame(mid_frame)
+        mid_top.pack(fill=tk.X,padx=6,pady=(6,0))
+
+        fframe2=ttk.Frame(mid_top)
+        fframe2.pack(fill=tk.X,pady=(0,4))
+
+        ttk.Label(fframe2,text="Version").grid(row=0,column=0,padx=2)
+        self.filter_version=tk.StringVar()
+        v_entry=ttk.Entry(fframe2,textvariable=self.filter_version,width=12)
+        v_entry.grid(row=1,column=0,padx=2)
+        self.filter_version.trace_add("write",lambda *a:self._on_filter_change())
+
+        ttk.Label(fframe2,text="Year").grid(row=0,column=1,padx=2)
+        self.filter_year=tk.StringVar()
+        y_entry=ttk.Entry(fframe2,textvariable=self.filter_year,width=8)
+        y_entry.grid(row=1,column=1,padx=2)
+        self.filter_year.trace_add("write",lambda *a:self._on_filter_change())
+        ttk.Button(fframe2,text="...",width=2,command=self._open_year_popup).grid(row=1,column=2,padx=2)
+
+        ttk.Label(fframe2,text="Size").grid(row=0,column=3,padx=2)
+        self.filter_size=tk.StringVar()
+        s_entry=ttk.Entry(fframe2,textvariable=self.filter_size,width=10)
+        s_entry.grid(row=1,column=3,padx=2)
+        self.filter_size.trace_add("write",lambda *a:self._on_filter_change())
+
+        ttk.Label(fframe2,text="Platform(s)").grid(row=0,column=4,padx=2)
+        self.filter_platform=tk.StringVar()
+        p_entry=ttk.Entry(fframe2,textvariable=self.filter_platform,width=14)
+        p_entry.grid(row=1,column=4,padx=2)
+        self.filter_platform.trace_add("write",lambda *a:self._on_filter_change())
+        ttk.Button(fframe2,text="...",width=2,command=self._open_platform_popup).grid(row=1,column=5,padx=2)
+
+        ttk.Label(fframe2,text="Realms").grid(row=0,column=6,padx=2)
+        self.filter_realms=tk.StringVar()
+        r_entry=ttk.Entry(fframe2,textvariable=self.filter_realms,width=14)
+        r_entry.grid(row=1,column=6,padx=2)
+        self.filter_realms.trace_add("write",lambda *a:self._on_filter_change())
+        ttk.Button(fframe2,text="...",width=2,command=self._open_realms_popup).grid(row=1,column=7,padx=2)
+
+        ttk.Label(fframe2,text="Artifact").grid(row=0,column=8,padx=2)
+        self.filter_artifact=tk.StringVar()
+        a_entry=ttk.Entry(fframe2,textvariable=self.filter_artifact,width=12)
+        a_entry.grid(row=1,column=8,padx=2)
+        self.filter_artifact.trace_add("write",lambda *a:self._on_filter_change())
+        ttk.Button(fframe2,text="...",width=2,command=self._open_artifact_popup).grid(row=1,column=9,padx=2)
+
+        page_controls_frame=ttk.Frame(fframe2)
+        page_controls_frame.grid(row=0,column=10,rowspan=2,padx=(12,0),sticky=tk.E)
+        ttk.Label(page_controls_frame,text="Page size:").pack(side=tk.LEFT)
+        page_combo=ttk.Combobox(page_controls_frame,textvariable=self.page_size,values=[str(x) for x in self.page_size_options],width=6,state="readonly")
+        page_combo.pack(side=tk.LEFT,padx=4)
+        page_combo.bind("<<ComboboxSelected>>",lambda e:self._on_page_size_change())
+        ttk.Button(page_controls_frame,text="Prev",command=self._prev_page).pack(side=tk.LEFT,padx=4)
+        ttk.Button(page_controls_frame,text="Next",command=self._next_page).pack(side=tk.LEFT,padx=4)
+        self.page_entry=ttk.Entry(page_controls_frame,width=8)
+        self.page_entry.pack(side=tk.LEFT,padx=(6,0))
+        self.page_entry.bind("<Return>",lambda e:self._goto_page())
+
+        ttk.Label(mid_frame,text="Entries").pack(anchor=tk.W,padx=6,pady=(0,0))
+        cols=("Download","ManifestID","Version","Timestamp","Size","Platform","Realms","ArtifactType")
+        tree_frame=ttk.Frame(mid_frame)
+        tree_frame.pack(fill=tk.BOTH,expand=True,padx=6,pady=6)
+        self.tree=ttk.Treeview(tree_frame,columns=cols,show="headings",selectmode="extended")
+        self.tree.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        tree_v=ttk.Scrollbar(tree_frame,orient=tk.VERTICAL,command=self.tree.yview)
+        tree_v.pack(side=tk.RIGHT,fill=tk.Y)
+        tree_h=ttk.Scrollbar(mid_frame,orient=tk.HORIZONTAL,command=self.tree.xview)
+        tree_h.pack(fill=tk.X,padx=6)
+        self.tree.config(yscrollcommand=tree_v.set,xscrollcommand=tree_h.set)
+        self._col_min_widths={
+            "Download":60,"ManifestID":140,"Version":140,"Timestamp":160,"Size":90,"Platform":140,"Realms":140,"ArtifactType":120,
+        }
+        for c in cols:
+            self.tree.heading(c,text=c,command=lambda _c=c:self._on_column_click(_c))
+            self.tree.column(c,width=self._col_min_widths.get(c,100),anchor=tk.W,minwidth=self._col_min_widths.get(c,80))
+        self.tree.bind("<<TreeviewSelect>>",lambda e:self._on_entry_select())
+        self.tree.bind("<Button-1>",self._on_tree_click,add="+")
+
+        status_frame=ttk.Frame(mid_frame)
+        status_frame.pack(fill=tk.BOTH,padx=6,pady=(0,6))
+        ttk.Label(status_frame,text="Status / Log:").pack(anchor=tk.W)
+        log_frame=ttk.Frame(status_frame)
+        log_frame.pack(fill=tk.BOTH,expand=True)
+        self.log_text=tk.Text(log_frame,height=8,wrap=tk.NONE)
+        self.log_text.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        log_v=ttk.Scrollbar(log_frame,orient=tk.VERTICAL,command=self.log_text.yview)
+        log_v.pack(side=tk.RIGHT,fill=tk.Y)
+        log_h=ttk.Scrollbar(status_frame,orient=tk.HORIZONTAL,command=self.log_text.xview)
+        log_h.pack(fill=tk.X)
+        self.log_text.config(yscrollcommand=log_v.set,xscrollcommand=log_h.set)
+
+        cache_info_frame=ttk.Frame(right_frame)
+        cache_info_frame.pack(fill=tk.X,padx=6,pady=(6,0))
+        ttk.Label(cache_info_frame,text="Cache Info").grid(row=0,column=0,sticky=tk.W)
+        self.cache_count_var=tk.StringVar(value="Manifests: 0")
+        self.cache_size_var=tk.StringVar(value="Cache size: 0 B")
+        self.cache_bundle_var=tk.StringVar(value="Bundle: (none)")
+        ttk.Label(cache_info_frame,textvariable=self.cache_count_var).grid(row=1,column=0,sticky=tk.W,padx=(0,4))
+        ttk.Label(cache_info_frame,textvariable=self.cache_size_var).grid(row=1,column=1,sticky=tk.W,padx=(0,4))
+        ttk.Label(cache_info_frame,textvariable=self.cache_bundle_var).grid(row=1,column=2,sticky=tk.W,padx=(0,4))
+        btn_frame=ttk.Frame(cache_info_frame)
+        btn_frame.grid(row=2,column=0,columnspan=3,pady=(6,0),sticky=tk.W)
+        ttk.Button(btn_frame,text="Refresh Cache Info",command=self._refresh_cache_info).pack(side=tk.LEFT,padx=4)
+        ttk.Button(btn_frame,text="Clear Cache (project)",command=self._clear_cache_for_project).pack(side=tk.LEFT,padx=4)
+
+        ttk.Label(right_frame,text="Notes").pack(anchor=tk.W,padx=6,pady=(6,0))
+        details_frame=ttk.Frame(right_frame)
+        details_frame.pack(fill=tk.BOTH,expand=True,padx=6,pady=6)
+        # Notes text area (multi-line, editable, saved per-project)
+        self.notes_text=tk.Text(details_frame,height=20,wrap=tk.WORD,undo=True)
+        self.notes_text.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        det_v=ttk.Scrollbar(details_frame,orient=tk.VERTICAL,command=self.notes_text.yview)
+        det_v.pack(side=tk.RIGHT,fill=tk.Y)
+        self.notes_text.config(yscrollcommand=det_v.set)
+        # bind modified event for auto-save (debounced)
+        self.notes_text.bind("<<Modified>>",self._on_notes_modified)
+
+        self.status_var=tk.StringVar(value="Ready")
+        status=ttk.Label(self,textvariable=self.status_var,relief=tk.SUNKEN,anchor=tk.W)
+        status.pack(side=tk.BOTTOM,fill=tk.X)
+
+        self._font=tkfont.nametofont("TkDefaultFont")
+        self._char_width=max(self._font.measure("0"),6)
+
+        self.tree.tag_configure("marked",background="#fff2cc")
+        self.tree.tag_configure("incache",background="#f0f0f0")
+
+    def _log(self,text):
+        self.log_text.insert(tk.END,text+"\n")
+        self.log_text.see(tk.END)
+        self._set_status(text)
+
+    def _set_status(self,text):
+        self.status_var.set(text)
+
+    def _on_mode_change(self,*_):
+        self.current_mode=self.mode_var.get()
+
+    def _on_update_catalog(self):
+        popup=tk.Toplevel(self)
+        popup.transient(self)
+        popup.grab_set()
+        popup.title("Updating Catalog & Tools")
+        popup.geometry("600x520")
+        txt=tk.Text(popup,wrap=tk.WORD)
+        txt.pack(fill=tk.BOTH,expand=True,padx=8,pady=8)
+        close_btn=ttk.Button(popup,text="Close",state=tk.DISABLED,command=popup.destroy)
+        close_btn.pack(pady=(0,8))
+        def append(s):
+            txt.insert(tk.END,s+"\n"); txt.see(tk.END)
+        def worker():
+            append("Starting update...")
+            ok=download_tools_and_catalog(progress_callback=lambda s: append(s))
+            if ok:
+                append("Update completed successfully.")
+            else:
+                append("Update finished with warnings or errors.")
+            append("Reloading catalog...")
+            self.after(100,self._load_catalog_into_ui)
+            append("Done.")
+            close_btn.config(state=tk.NORMAL)
+        threading.Thread(target=worker,daemon=True).start()
+
+    def _on_credits(self):
+        popup=tk.Toplevel(self)
+        popup.transient(self); popup.grab_set(); popup.title("Credits")
+        popup.geometry("600x520")
+        txt=tk.Text(popup,wrap=tk.WORD)
+        txt.pack(fill=tk.BOTH,expand=True,padx=8,pady=8)
+        credits_text=(
+"This downloader script was created and maintained by:\n"
+"  PixelButts\n"
+"  - https://x.com/PixelButts\n"
+"  - https://bsky.app/profile/pixel-butts.bsky.social\n\n"
+"To leave feedback or report a bug:\n"
+"  - https://github.com/RiotArchiveProject/catalog-download-script\n"
+)
+        txt.insert("1.0",credits_text)
+        txt.config(state=tk.DISABLED)
+        btns=ttk.Frame(popup); btns.pack(pady=6)
+        ttk.Button(btns,text="Close",command=popup.destroy).pack(side=tk.LEFT,padx=6)
+
+    def _load_catalog_into_ui(self):
+        self.catalog=load_catalog()
+        projects=sorted(self.catalog.keys())
+        self.project_listbox.delete(0,tk.END)
+        for p in projects:
+            self.project_listbox.insert(tk.END,p)
+        if projects:
+            cur=self.selected_project
+            if cur and cur in projects:
+                idx=projects.index(cur)
+                self.project_listbox.selection_clear(0,tk.END)
+                self.project_listbox.selection_set(idx)
+                self.project_listbox.see(idx)
+                self._on_project_select()
+                return
+            self.project_listbox.selection_set(0)
+            self._on_project_select()
+
+    def _on_project_select(self):
+        sel=self.project_listbox.curselection()
+        if not sel:
+            return
+        idx=sel[0]
+        project=self.project_listbox.get(idx)
+        self.selected_project=project
+        proj_prefs=self.prefs.get(project,{})
+        if proj_prefs:
+            self.filter_version.set(proj_prefs.get("version",""))
+            self.filter_year.set(proj_prefs.get("year",""))
+            self.filter_size.set(proj_prefs.get("size",""))
+            self.filter_platform.set(proj_prefs.get("platform",""))
+            self.filter_realms.set(proj_prefs.get("realms",""))
+            self.filter_artifact.set(proj_prefs.get("artifact",""))
+        else:
+            self.filter_version.set("")
+            self.filter_year.set("")
+            self.filter_size.set("")
+            self.filter_platform.set("")
+            self.filter_realms.set("")
+            self.filter_artifact.set("")
+        self.marked.setdefault(project,set())
+        self.current_page=1
+        self._apply_filter()
+        self._refresh_cache_info()
+        # load project notes into notes_text
+        self._load_project_notes()
+
+    def _populate_page(self):
+        prev_sel=self._preserve_selection or set()
+        self._preserve_selection=None
+        self.tree.delete(*self.tree.get_children())
+        if not self.filtered_entries:
+            try:
+                self.page_entry.delete(0,tk.END)
+                self.page_entry.insert(0,"0/0")
+            except Exception:
+                pass
+            return
+        ps=self.page_size.get()
+        if ps=="All":
+            page_items=self.filtered_entries
+            self.total_pages=1
+            self.current_page=1
+        else:
+            try:
+                ps_int=int(ps)
+            except Exception:
+                ps_int=100
+            total=len(self.filtered_entries)
+            self.total_pages=max(1,(total+ps_int-1)//ps_int)
+            if self.current_page<1:
+                self.current_page=1
+            if self.current_page>self.total_pages:
+                self.current_page=self.total_pages
+            start=(self.current_page-1)*ps_int
+            end=start+ps_int
+            page_items=self.filtered_entries[start:end]
+        for mid,e in page_items:
+            incache=(CACHE_DIR/self.selected_project/"releases"/f"{mid}.manifest").exists()
+            marked_set=self.marked.get(self.selected_project,set())
+            checkbox="☑" if mid in marked_set else "☐"
+            tags=()
+            if incache:
+                tags=("incache",)
+            if mid in marked_set:
+                tags=tuple(set(tags)|{"marked"})
+            self.tree.insert("",tk.END,iid=mid,values=(
+                checkbox,mid,e.get("version",""),e.get("timestamp",""),human_mb(e.get("size","")),normalize_platform(e),"|".join(e.get("realms",[]) or []),e.get("artifact_type","")
+            ),tags=tags)
+        if prev_sel:
+            to_select=[iid for iid in prev_sel if self.tree.exists(iid)]
+            if to_select:
+                try:
+                    self.tree.selection_set(to_select)
+                except Exception:
+                    pass
+        try:
+            self.page_entry.delete(0,tk.END)
+            self.page_entry.insert(0,f"{self.current_page}/{self.total_pages}")
+        except Exception:
+            pass
+        self._autosize_columns()
+
+    def _on_filter_change(self):
+        if hasattr(self,"_filter_after_id"):
+            try:
+                self.after_cancel(self._filter_after_id)
+            except Exception:
+                pass
+        self._filter_after_id=self.after(200,self._apply_filter)
+
+    def _apply_filter(self):
+        if not self.selected_project:
+            return
+        entries=list(self.catalog.get(self.selected_project,{}).items())
+        patterns={}
+        v=self.filter_version.get().strip()
+        if v:
+            patterns["version"]=v.lower()
+        y=self.filter_year.get().strip()
+        if y:
+            patterns["year"]=y
+        s=self.filter_size.get().strip()
+        if s:
+            patterns["size"]=s
+        p=self.filter_platform.get().strip()
+        if p:
+            patterns["platform"]=[tok.strip().lower() for tok in re.split(r'[,\|;]',p) if tok.strip()]
+        r=self.filter_realms.get().strip()
+        if r:
+            patterns["realms"]=[tok.strip().lower() for tok in re.split(r'[,\|;]',r) if tok.strip()]
+        a=self.filter_artifact.get().strip()
+        if a:
+            patterns["artifact"]=[tok.strip().lower() for tok in re.split(r'[,\|;]',a) if tok.strip()]
+        filtered=[]
+        for mid,e in entries:
+            fields={
+                "version":str(e.get("version","")),
+                "timestamp":str(e.get("timestamp","")),
+                "year":(parse_timestamp(e.get("timestamp","")).year if parse_timestamp(e.get("timestamp","")) else ""),
+                "size":human_mb(e.get("size","")),
+                "platform":normalize_platform(e),
+                "artifact":str(e.get("artifact_type","")),
+                "realms":"|".join(e.get("realms",[]) or [])
+            }
+            ok=True
+            if "version" in patterns:
+                if not fields["version"].lower().startswith(patterns["version"]):
+                    ok=False
+            if ok and "year" in patterns:
+                if str(fields["year"])!=str(patterns["year"]):
+                    ok=False
+            if ok and "size" in patterns:
+                sval=patterns["size"]
+                m=re.match(r'^\s*([<>]=?)\s*([\d\.]+)\s*(GB|MB)?\s*$',sval,re.IGNORECASE)
+                if m:
+                    op,num,unit=m.groups()
+                    num=float(num)
+                    if not unit:
+                        unit="MB"
+                    unit=unit.upper()
+                    bytes_threshold=int(num*(1024**2 if unit=="MB" else 1024**3))
+                    try:
+                        entry_bytes=int(e.get("size",0))
+                    except Exception:
+                        entry_bytes=0
+                    if op==">":
+                        if not (entry_bytes>bytes_threshold): ok=False
+                    elif op=="<":
+                        if not (entry_bytes<bytes_threshold): ok=False
+                    elif op==">=":
+                        if not (entry_bytes>=bytes_threshold): ok=False
+                    elif op=="<=":
+                        if not (entry_bytes<=bytes_threshold): ok=False
+                else:
+                    if sval.lower() not in fields["size"].lower():
+                        ok=False
+            if ok and "platform" in patterns:
+                plats=[p.strip().lower() for p in fields["platform"].split(",") if p.strip()]
+                if not any(tok in plats for tok in patterns["platform"]):
+                    ok=False
+            if ok and "artifact" in patterns:
+                if not any(tok in fields["artifact"].lower() for tok in patterns["artifact"]):
+                    ok=False
+            if ok and "realms" in patterns:
+                realm_tokens=[t.strip().lower() for t in re.split(r'[,\|;]',fields["realms"]) if t.strip()]
+                if not any(tok in realm_tokens for tok in patterns["realms"]):
+                    ok=False
+            if ok:
+                filtered.append((mid,e))
+        col=self.sort_state.get("col","Timestamp")
+        rev=self.sort_state.get("reverse",True)
+        def sort_key(item):
+            mid,ent=item
+            if col=="Timestamp":
+                dt=parse_timestamp(ent.get("timestamp",""))
+                return dt or datetime.min
+            if col=="Version":
+                return ent.get("version","")
+            if col=="Size":
+                try:
+                    return int(ent.get("size",0))
+                except Exception:
+                    return 0
+            if col=="Platform":
+                return normalize_platform(ent)
+            if col=="ArtifactType":
+                return ent.get("artifact_type","")
+            if col=="ManifestID":
+                return mid
+            if col=="Realms":
+                return "|".join(ent.get("realms",[]) or [])
+            return ent.get("timestamp","")
+        filtered.sort(key=sort_key,reverse=rev)
+        self.filtered_entries=filtered
+        self.prefs.setdefault(self.selected_project,{})
+        self.prefs[self.selected_project].update({
+            "version":self.filter_version.get().strip(),
+            "year":self.filter_year.get().strip(),
+            "size":self.filter_size.get().strip(),
+            "platform":self.filter_platform.get().strip(),
+            "realms":self.filter_realms.get().strip(),
+            "artifact":self.filter_artifact.get().strip(),
+        })
+        self.prefs["multithreaded"]=self.multithread_var.get()
+        self.prefs["page_size"]=self.page_size.get()
+        save_prefs(self.prefs)
+        self.current_page=1
+        self._populate_page()
+        self._set_status(f"Filter applied: {len(filtered)} entries")
+
+    def _on_page_size_change(self):
+        self.current_page=1
+        self._populate_page()
+
+    def _prev_page(self):
+        if self.current_page>1:
+            self.current_page-=1
+            self._populate_page()
+
+    def _next_page(self):
+        if self.current_page<self.total_pages:
+            self.current_page+=1
+            self._populate_page()
+
+    def _goto_page(self):
+        txt=self.page_entry.get().strip()
+        if "/" in txt:
+            try:
+                p=int(txt.split("/",1)[0])
+            except Exception:
+                return
+        else:
+            try:
+                p=int(txt)
+            except Exception:
+                return
+        if p<1:
+            p=1
+        if p>self.total_pages:
+            p=self.total_pages
+        self.current_page=p
+        self._populate_page()
+
+    def _open_platform_popup(self):
+        if not self.selected_project:
+            return
+        values=sorted({normalize_platform(e) for _,e in self.catalog.get(self.selected_project,{}).items()})
+        self._open_multi_choice_popup("Platform(s)",values,self.filter_platform)
+
+    def _open_artifact_popup(self):
+        if not self.selected_project:
+            return
+        values=sorted({(e.get("artifact_type","") or "") for _,e in self.catalog.get(self.selected_project,{}).items()})
+        self._open_multi_choice_popup("Artifact Type",values,self.filter_artifact)
+
+    def _open_realms_popup(self):
+        if not self.selected_project:
+            return
+        values=sorted({r for _,e in self.catalog.get(self.selected_project,{}).items() for r in (e.get("realms",[]) or [])})
+        self._open_multi_choice_popup("Realms",values,self.filter_realms)
+
+    def _open_year_popup(self):
+        if not self.selected_project:
+            return
+        years=set()
+        for _,e in self.catalog.get(self.selected_project,{}).items():
+            dt=parse_timestamp(e.get("timestamp",""))
+            if dt:
+                years.add(str(dt.year))
+        self._open_multi_choice_popup("Year",sorted(years),self.filter_year,single_choice=True)
+
+    def _open_multi_choice_popup(self,title,values,target_var,single_choice=False):
+        popup=tk.Toplevel(self)
+        popup.transient(self); popup.grab_set(); popup.title(title)
+        popup.geometry("600x520")
+        frame=ttk.Frame(popup); frame.pack(fill=tk.BOTH,expand=True,padx=8,pady=8)
+        canvas=tk.Canvas(frame); canvas.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        vsb=ttk.Scrollbar(frame,orient=tk.VERTICAL,command=canvas.yview); vsb.pack(side=tk.RIGHT,fill=tk.Y)
+        canvas.configure(yscrollcommand=vsb.set)
+        inner=ttk.Frame(canvas); canvas.create_window((0,0),window=inner,anchor="nw")
+        def on_config(e): canvas.configure(scrollregion=canvas.bbox("all"))
+        inner.bind("<Configure>",on_config)
+        vars={}
+        cols=3
+        for i,val in enumerate(values):
+            var=tk.BooleanVar(value=False)
+            chk=ttk.Checkbutton(inner,text=val,variable=var)
+            r=i//cols; c=i%cols
+            chk.grid(row=r,column=c,sticky=tk.W,padx=6,pady=2)
+            vars[val]=var
+        if single_choice:
+            def on_chk_click(vname):
+                for k in vars:
+                    vars[k].set(k==vname)
+            for k in vars:
+                for child in inner.grid_slaves():
+                    if isinstance(child,ttk.Checkbutton) and child.cget("text")==k:
+                        child.config(command=lambda name=k:on_chk_click(name))
+                        break
+        def on_apply():
+            sel=[k for k,v in vars.items() if v.get()]
+            if single_choice:
+                target_var.set(sel[0] if sel else "")
+            else:
+                target_var.set(",".join(sel))
+            popup.destroy()
+        btns=ttk.Frame(popup); btns.pack(pady=6)
+        ttk.Button(btns,text="Apply",command=on_apply).pack(side=tk.LEFT,padx=6)
+        ttk.Button(btns,text="Cancel",command=popup.destroy).pack(side=tk.LEFT,padx=6)
+
+    def _on_tree_click(self,event):
+        region=self.tree.identify("region",event.x,event.y)
+        if region!="cell":
+            return
+        col=self.tree.identify_column(event.x)
+        row=self.tree.identify_row(event.y)
+        if not row:
+            return
+        if col=="#1":
+            project=self.selected_project
+            if project is None:
+                return
+            marked_set=self.marked.setdefault(project,set())
+            if row in marked_set:
+                marked_set.remove(row)
+                self.tree.set(row,"Download","☐")
+                tags=set(self.tree.item(row,"tags")); tags.discard("marked"); self.tree.item(row,tags=tuple(tags))
+                self._log(f"Unmarked {row} for download.")
+            else:
+                marked_set.add(row)
+                self.tree.set(row,"Download","☑")
+                tags=set(self.tree.item(row,"tags")); tags.add("marked"); self.tree.item(row,tags=tuple(tags))
+                self._log(f"Marked {row} for download.")
+            return
+
+    def _on_entry_select(self):
+        sel=self.tree.selection()
+        if not sel:
+            # still load project notes when selection cleared
+            self._load_project_notes()
+            return
+        # selection doesn't change notes (notes are per-project), but keep behavior to ensure notes visible
+        self._load_project_notes()
+
+    def _load_project_notes(self):
+        # load notes for the selected project into the notes_text widget
+        try:
+            self.notes_text.delete("1.0",tk.END)
+            if self.selected_project:
+                proj_prefs=self.prefs.get(self.selected_project,{})
+                notes=proj_prefs.get("notes","")
+                if notes is None:
+                    notes=""
+                self.notes_text.insert("1.0",notes)
+            self.notes_text.edit_modified(False)
         except Exception:
             pass
 
-def ask_number(prompt, min_val, max_val, redraw=None):
-    while True:
-        val = input_with_help(prompt)
-        if val == "__REDRAW__":
-            if redraw:
-                redraw()
-            continue
-        val = val.strip()
-        if val.isdigit():
-            num = int(val)
-            if min_val <= num <= max_val:
-                return num
-        print(f"Please enter a number between {min_val} and {max_val}.")
-
-def print_indexed_grid(options, per_row=5, zero_label="ANY"):
-    if not options:
-        return
-    max_len = max(len(opt) for opt in options)
-    idx_width = len(str(len(options)))
-    col_width = idx_width + 2 + max_len + 2
-    print(f"{0:>{idx_width}}) {zero_label:<{max_len}}", end="")
-    print()
-    for i, opt in enumerate(options, 1):
-        cell = f"{i:>{idx_width}}) {opt:<{max_len}}"
-        print(cell.ljust(col_width), end="")
-        if i % per_row == 0:
-            print()
-    if len(options) % per_row != 0:
-        print()
-
-def select_realms_interactive(available_realms, current_mode="OR", current_set=None):
-    def parse_indices(s, max_idx):
-        s = s.strip()
-        if not s:
-            return set()
-        toks = [t.strip() for t in s.split(",") if t.strip()]
-        idxs = set()
-        for t in toks:
-            if "-" in t:
-                try:
-                    a, b = t.split("-", 1)
-                    a_i = int(a); b_i = int(b)
-                    if a_i <= 0 or b_i <= 0:
-                        continue
-                    for i in range(min(a_i, b_i), max(a_i, b_i) + 1):
-                        if 0 <= i <= max_idx:
-                            idxs.add(i)
-                except Exception:
-                    continue
-            else:
-                try:
-                    i = int(t)
-                    if 0 <= i <= max_idx:
-                        idxs.add(i)
-                except Exception:
-                    continue
-        return idxs
-
-    mode = current_mode or "OR"
-    selected = set(current_set) if current_set else set()
-    max_idx = len(available_realms)
-    while True:
-        clear_screen()
-        print("\n--- Realm Selection ---")
-        print(f"Mode: {mode}")
-        if selected:
-            print("Selected:", ", ".join(sorted(selected)))
-        else:
-            print("Selected: (ANY)")
-        print("\nAvailable realms:")
-        print_indexed_grid(available_realms, per_row=5, zero_label="ANY")
-        print("\nControls:")
-        print("  Enter indices (e.g., 1,3-5) to toggle selection")
-        print("  0 = ANY (clear selection)    a = select all    n = clear selection")
-        print("  m = toggle mode    d = done (apply)    c = cancel (leave unchanged)")
-        choice = input_with_help("Choose: ").strip().lower()
-        if choice == "__REDRAW__":
-            continue
-        if choice == "c":
-            return None, None
-        if choice == "d":
-            return mode, (selected if selected else None)
-        if choice == "a":
-            selected = set(available_realms)
-            continue
-        if choice == "n":
-            selected.clear()
-            continue
-        if choice == "m":
-            mode = "AND" if mode == "OR" else "OR"
-            continue
-        idxs = parse_indices(choice, max_idx)
-        if not idxs:
-            print("Invalid input. Enter indices, '0', 'a', 'n', 'm', 'd', or 'c'.")
-            input_with_help("Press Enter to continue...")
-            continue
-        if 0 in idxs:
-            if len(idxs) > 1:
-                print("If you choose 0 (ANY) you cannot select other indices at the same time.")
-                input_with_help("Press Enter to continue...")
-                continue
-            selected.clear()
-            continue
-        for i in sorted(idxs):
-            idx0 = i - 1
-            if 0 <= idx0 < len(available_realms):
-                realm = available_realms[idx0]
-                if realm in selected:
-                    selected.remove(realm)
-                else:
-                    selected.add(realm)
-        continue
-
-def print_aligned_grid(items, per_row=6):
-    if not items:
-        return
-    max_len = max(len(s) for s in items)
-    col_width = max_len + 2
-    for i, s in enumerate(items, 1):
-        print(f"{s:<{col_width}}", end="")
-        if i % per_row == 0:
-            print()
-    if len(items) % per_row != 0:
-        print()
-
-def sanitize_version(ver):
-    safe = re.sub(r'[:*?"<>|]', "", ver)
-    return safe
-
-def download_manifest(project, manifest_id, dest_base=CACHE_DIR):
-    url = f"https://{project}.secure.dyn.riotcdn.net/channels/public/releases/{manifest_id}.manifest"
-    dest = dest_base / project / "releases" / f"{manifest_id}.manifest"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    if not dest.exists():
+    def _on_notes_modified(self,event=None):
+        # Debounce saves to avoid excessive disk writes
         try:
-            r = requests.get(url, timeout=30)
-            if r.status_code == 404:
-                print(f"[Warn] Manifest {manifest_id} for project '{project}' not found (404). Skipping.")
-                return None
-            r.raise_for_status()
-            dest.write_bytes(r.content)
-            print(f"[OK] Downloaded manifest to {dest}")
-        except requests.exceptions.RequestException as ex:
-            print(f"[Error] Failed to download manifest {manifest_id} for project '{project}': {ex}")
-            return None
-    return dest
-
-def prompt_languages(project, manifest_id, detected_langs=None):
-    entry = CATALOG.get(project, {}).get(manifest_id, {})
-    if project == "lol":
-        plat = entry.get("platform", "").lower()
-        if "windows" in plat:
-            autodetect = ["none", "windows"]
-        elif "mac" in plat:
-            autodetect = ["none", "macos"]
-        else:
-            autodetect = ["none"]
-    else:
-        autodetect = ["none"]
-    def draw_lang_prompt(detected=None):
-        print("\n--- Language Filter ---")
-        if detected:
-            print(f"\nDetected languages/tags for {project}")
-            print_aligned_grid(detected, per_row=6)
-        else:
-            print(f"\nLanguage hint for {project}: {'|'.join(autodetect)}")
-        print()
-    prompt_text = "Enter languages/tags separated with | (e.g., none|windows|en_US), or leave blank for no filter (all files): "
-
-    while True:
-        draw_lang_prompt(detected_langs)
-        choice = input_with_help(prompt_text)
-        if choice == "__REDRAW__":
-            continue
-        choice = choice.strip()
-        if not choice:
-            return None
-        langs = [t.strip() for t in choice.split("|") if t.strip()]
-        if "none" not in langs:
-            langs.insert(0, "none")
-        return "|".join(langs)
-
-def build_output_dir(project, manifest_id, entry, langs=None):
-    version = sanitize_version(entry.get("version","unknown"))
-    platform = entry.get("platform","unknown")
-    base = f"{project}-{version}-{platform}-{manifest_id}"
-    outdir = BUILDS_DIR / project / base
-    outdir.mkdir(parents=True, exist_ok=True)
-    if langs:
-        (outdir.parent / f"{base}_filter.txt").write_text(langs, encoding="utf-8")
-    return outdir
-
-def run_rman_dl(project, manifest_path, outdir, langs=None, file_filter=None, mode="download", jobs=None, cdn_workers=None):
-    if jobs is None:
-        jobs = RMAN_DL_JOBS
-    if cdn_workers is None:
-        cdn_workers = RMAN_DL_CDN_WORKERS
-    cmd = [str(RMAN_DL)]
-    if langs:
-        cmd += ["-l", langs]
-    if file_filter:
-        cmd += ["-p", file_filter]
-
-    if mode == "archive":
-        cmd += ["--cache-readonly"]
-        cache_path = ARCHIVE_DIR / project / "bundles" / f"{project}.bundle"
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cmd += ["--cache", str(cache_path)]
-    else:
-        cmd += ["--cdn", f"https://{project}.secure.dyn.riotcdn.net/channels/public"]
-        cache_path = CACHE_DIR / project / "bundles" / f"{project}-cache.bundle"
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cmd += ["--cache", str(cache_path)]
-    cmd += [str(manifest_path), str(outdir)]
-    try:
-        j_val = int(jobs)
-    except Exception:
-        j_val = RMAN_DL_JOBS
-    try:
-        c_val = int(cdn_workers)
-    except Exception:
-        c_val = RMAN_DL_CDN_WORKERS
-    cmd += ["--jobs", str(j_val), "--cdn-workers", str(c_val)]
-    print("[CMD]", " ".join(cmd))
-    subprocess.run(cmd, cwd=ROOT)
-
-
-def run_rman_ls(manifest_path, filter_lang=None, filter_path=None, fmt=None, timeout=None):
-    if not RMAN_LS.exists():
-        print(f"[Error] rman-ls not found at {RMAN_LS}")
-        return None
-    cmd = [str(RMAN_LS)]
-    if fmt:
-        cmd += ["--format", fmt]
-    if filter_lang:
-        cmd += ["-l", filter_lang]
-    if filter_path:
-        cmd += ["-p", filter_path]
-    cmd += [str(manifest_path)]
-    try:
-        print(f"[Info] parsing manifest {manifest_path.stem}...")
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=ROOT)
-        out, err = proc.communicate(timeout=timeout)
-        if proc.returncode != 0:
-            print(f"[Warn] rman-ls exited with code {proc.returncode}. stderr: {err.strip()}")
-        lines = [ln.strip() for ln in out.splitlines() if ln.strip()]
-        return lines
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        print("[Error] rman-ls timed out.")
-        return None
-    except Exception as ex:
-        print(f"[Error] Failed to run rman-ls: {ex}")
-        return None
-
-def prepare_manifest_metadata(project, manifest_id, use_archive=False, allow_manifest_download=True):
-    base_dir = ARCHIVE_DIR if use_archive else CACHE_DIR
-    manifest_path = base_dir / project / "releases" / f"{manifest_id}.manifest"
-
-    if not use_archive:
-        if not manifest_path.exists():
-            if allow_manifest_download:
-                mpath = download_manifest(project, manifest_id, dest_base=CACHE_DIR)
-                if mpath is None:
-                    print(f"[Warn] Could not obtain manifest {manifest_id} for project {project}.")
-                    return None
-                manifest_path = mpath
-            else:
-                print(f"[Warn] Manifest {manifest_id} missing in cache and downloads are disabled for this mode; skipping.")
-                return None
-    else:
-        if not manifest_path.exists():
-            print(f"[Warn] Archive manifest not found at {manifest_path}. Skipping.")
-            return None
-    metadata_dir = base_dir / project / "metadata"
-    metadata_dir.mkdir(parents=True, exist_ok=True)
-    metadata_file = metadata_dir / f"{manifest_id}.txt"
-    if metadata_file.exists():
+            if not self.notes_text.edit_modified():
+                return
+        except Exception:
+            return
+        # reset modified flag immediately to avoid re-entrancy
         try:
-            lines = [ln.strip() for ln in metadata_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
-            langs = set()
-            for ln in lines:
-                parts = ln.rsplit(",", 1)
-                if len(parts) == 2:
-                    lang_field = parts[1].strip()
-                    langs.update(_split_and_normalize_langs(lang_field))
-            return sorted(langs)
-        except Exception as ex:
-            print(f"[Warn] Failed to read metadata file {metadata_file}: {ex}")
-    lines = run_rman_ls(manifest_path)
-    if lines is None:
-        return None
-    try:
-        metadata_file.write_text("\n".join(lines), encoding="utf-8")
-    except Exception as ex:
-        print(f"[Warn] Failed to write metadata file {metadata_file}: {ex}")
-
-    langs = set()
-    for ln in lines:
-        parts = ln.rsplit(",", 1)
-        if len(parts) == 2:
-            lang_field = parts[1].strip()
-            langs.update(_split_and_normalize_langs(lang_field))
-    return sorted(langs)
-
-def prefetch_and_parse_manifests(project, manifest_list, use_archive=False, allow_manifest_download=True):
-    results = {}
-    base_dir = ARCHIVE_DIR if use_archive else CACHE_DIR
-    for mid in manifest_list:
-        manifest_path = base_dir / project / "releases" / f"{mid}.manifest"
-        if not manifest_path.exists():
-            if use_archive:
-                print(f"[Warn] Archive manifest missing for {mid}; skipping.")
-                continue
-            if allow_manifest_download:
-                mpath = download_manifest(project, mid, dest_base=CACHE_DIR)
-                if mpath is None:
-                    print(f"[Warn] Failed to download manifest {mid}; skipping.")
-                    continue
-                manifest_path = mpath
-            else:
-                print(f"[Warn] Manifest {mid} missing in cache and downloads are disabled for this mode; skipping.")
-                continue
-        results[mid] = {'manifest_path': manifest_path, 'langs': None}
-    if not results:
-        return {}
-    for mid in list(results.keys()):
-        langs = prepare_manifest_metadata(project, mid, use_archive=use_archive, allow_manifest_download=allow_manifest_download)
-        if langs is None:
-            print(f"[Warn] Could not parse metadata for {mid}; it will be skipped.")
-            results.pop(mid, None)
-            continue
-        results[mid]['langs'] = langs
-    return results
-
-def _split_and_normalize_langs(lang_field):
-    if not lang_field:
-        return set()
-    parts = re.split(r'[;,\|]', lang_field)
-    langs = {p.strip() for p in parts if p and p.strip()}
-    return langs
-
-def _bytes_to_gb(bytes_val):
-    try:
-        gb = int(bytes_val) / 1024 / 1024 / 1024
-    except Exception:
-        return None
-    return gb
-
-def _format_gb(bytes_val):
-    gb = _bytes_to_gb(bytes_val)
-    if gb is None:
-        return f"{bytes_val} B"
-    if gb < 0.1:
-        return f"{gb:.3f} GB"
-    if gb < 1:
-        return f"{gb:.2f} GB"
-    return f"{gb:.1f} GB"
-
-def _manifest_metadata_path(project, manifest_id, use_archive=False):
-    base = ARCHIVE_DIR if use_archive else CACHE_DIR
-    return base / project / "metadata" / f"{manifest_id}.txt"
-
-def compute_manifest_size_from_metadata(project, manifest_id, selected_langs=None, file_filter_regex=None, use_archive=False):
-    meta_path = _manifest_metadata_path(project, manifest_id, use_archive=use_archive)
-    if not meta_path.exists():
-        return None
-    selected_set = None
-    if selected_langs:
-        if isinstance(selected_langs, str):
-            toks = [t.strip() for t in selected_langs.split("|") if t.strip()]
-        else:
-            toks = [t.strip() for t in selected_langs if isinstance(t, str) and t.strip()]
-        if toks:
-            selected_set = {t.lower() for t in toks}
-        else:
-            selected_set = None
-
-    file_re = None
-    if file_filter_regex:
-        try:
-            file_re = re.compile(file_filter_regex, re.IGNORECASE)
-        except re.error:
-            file_re = None
-
-    try:
-        text = meta_path.read_text(encoding="utf-8")
-    except Exception:
-        return None
-
-    total = 0
-    try:
-        for ln in text.splitlines():
-            ln = ln.strip()
-            if not ln:
-                continue
-
-            parts = ln.rsplit(",", 3)
-            if len(parts) == 4:
-                path_field = parts[0].strip()
-                size_field = parts[1].strip()
-                langs_field = parts[3].strip()
-            else:
-                parts2 = ln.rsplit(",", 1)
-                if len(parts2) != 2:
-                    continue
-                rest, lang_field = parts2
-                rest_parts = rest.rsplit(",", 1)
-                if len(rest_parts) != 2:
-                    continue
-                path_field = rest_parts[0].strip()
-                size_field = rest_parts[1].strip()
-                langs_field = lang_field.strip()
-            if file_re and not file_re.search(path_field):
-                continue
+            self.notes_text.edit_modified(False)
+        except Exception:
+            pass
+        if self._notes_save_after_id:
             try:
-                size_val = int(size_field)
+                self.after_cancel(self._notes_save_after_id)
             except Exception:
-                continue
-            if selected_set:
-                if not langs_field:
-                    lang_tokens = ["none"]
-                else:
-                    lang_tokens = [t.strip() for t in re.split(r'[;,\|,]', langs_field) if t and t.strip()]
-                    if not lang_tokens:
-                        lang_tokens = ["none"]
-                lang_tokens_lc = {t.lower() for t in lang_tokens}
-                if lang_tokens_lc.isdisjoint(selected_set):
-                    continue
-            total += size_val
-    except Exception:
-        return None
-    return total
+                pass
+        self._notes_save_after_id=self.after(500,self._save_project_notes)
 
-def format_mb(bytes_val):
-    try:
-        mb = int(bytes_val) / 1024 / 1024
-    except Exception:
-        return str(bytes_val)
-    return f"{mb:.2f} MB" if mb < 10 else f"{mb:.1f} MB"
+    def _save_project_notes(self):
+        self._notes_save_after_id=None
+        if not self.selected_project:
+            return
+        try:
+            notes=self.notes_text.get("1.0",tk.END).rstrip("\n")
+            self.prefs.setdefault(self.selected_project,{})
+            self.prefs[self.selected_project]["notes"]=notes
+            # ensure multithreaded and page_size are preserved in prefs
+            self.prefs["multithreaded"]=self.multithread_var.get()
+            self.prefs["page_size"]=self.page_size.get()
+            save_prefs(self.prefs)
+            self._log(f"Notes saved for project {self.selected_project}.")
+        except Exception as ex:
+            self._log(f"[Error] Failed to save notes: {ex}")
 
-def human_mb(size_val):
-    return format_mb(size_val)
+    def _select_all_filtered(self):
+        project=self.selected_project
+        if not project:
+            return
+        mids=[mid for mid,_ in self.filtered_entries]
+        marked_set=self.marked.setdefault(project,set())
+        for mid in mids:
+            marked_set.add(mid)
+        self._preserve_selection=set(mids)
+        self._populate_page()
+        self._log(f"Selected {len(mids)} manifests for download (all filtered).")
 
-def check_cache_size(project, threshold_mb=25600):
-    return
+    def _clear_selections(self):
+        project=self.selected_project
+        if not project:
+            return
+        self.marked.setdefault(project,set()).clear()
+        self._preserve_selection=set()
+        self._populate_page()
+        self._log("Cleared all in-memory selections for current project.")
 
-def draw_project_selection(projects):
-    clear_screen()
-    print("\n[Project Selection]   [Type 'F1' for Help | 'F2' for Project Help | 'F3' for Credits]")
-    for i, p in enumerate(projects, 1):
-        print(f"  {i}) {p}")
-
-def search_data(source="catalog", page_size=20):
-    if source == "catalog":
-        projects = list(CATALOG.keys())
-    elif source == "cache":
-        projects = [p for p in CATALOG.keys() if (CACHE_DIR / p).exists()]
-    elif source == "archive":
-        projects = [p for p in CATALOG.keys() if (ARCHIVE_DIR / p).exists()]
-    else:
-        projects = []
-    if not projects:
-        print("[Info] No projects available.")
-        input_with_help("Press Enter to return...")
-        return None, [], None, None
-    regex = ""
-    realm_mode = "OR"
-    realm_set = None
-    plat = None
-    page = 0
-    draw_project_selection(projects)
-    choice = ask_number("Select project: ", 1, len(projects), redraw=lambda: draw_project_selection(projects))
-    project = projects[choice - 1]
-    selection = set(get_selection(source, project))
-    while True:
-        clear_screen()
-        results = []
-        if source == "catalog":
-            items = CATALOG[project].items()
+    def _on_download_manifest(self):
+        project=self.selected_project
+        if project is None:
+            return
+        marked_set=self.marked.get(project,set())
+        if marked_set:
+            mids=list(marked_set)
         else:
-            items = []
-            base_dir = CACHE_DIR if source == "cache" else ARCHIVE_DIR
-            for m in (base_dir / project).rglob("*.manifest"):
-                mid = m.stem
-                entry = CATALOG[project].get(mid)
-                if entry:
-                    items.append((mid, entry))
-        for mid, entry in items:
-            if regex and not re.search(regex, entry.get("version", "")):
-                continue
-            if realm_set:
-                entry_realms = set(entry.get("realms", []) or [])
-                if realm_mode == "OR":
-                    if entry_realms.isdisjoint(realm_set):
-                        continue
-                else:
-                    if not realm_set.issubset(entry_realms):
-                        continue
-            if plat and entry.get("platform") != plat:
-                continue
-            results.append((mid, entry))
-        results.sort(key=lambda x: x[1].get("timestamp", ""), reverse=True)
-        realm_display = "ANY"
-        if realm_set:
-            realm_display = f"{realm_mode}:{'|'.join(sorted(realm_set))}"
-        print(f"\n[Current Filter] source={source}, project={project}, version_regex='{regex or 'ALL'}', platform={plat or 'ANY'}, realm={realm_display}")
-        print(f"[Info] Results after filters: {len(results)}\n")
-        start = page * page_size
-        end = start + page_size
-        subset = results[start:end]
-        rows = []
-        for idx, (mid, e) in enumerate(subset, start + 1):
-            rows.append({
-                "Idx": str(idx),
-                "ManifestID": mid,
-                "Version": e.get("version", ""),
-                "Timestamp": e.get("timestamp", ""),
-                "Size": human_mb(e.get("size", "")),
-                "Platform": e.get("platform", "unknown"),
-                "Realms": "|".join(e.get("realms", [])),
-            })
-        col_names = ["Idx","ManifestID","Version","Timestamp","Size","Platform","Realms"]
-        col_widths = {col: len(col) for col in col_names}
-        for r in rows:
-            for col in col_names:
-                col_widths[col] = max(col_widths[col], len(str(r[col])))
-        term_width = shutil.get_terminal_size((120, 20)).columns
-        SPACING = 2
-        total_width = sum(col_widths.values()) + (len(col_names)-1)*SPACING
-        for col in ["Version","Realms"]:
-            while total_width > term_width and col_widths[col] > 10:
-                col_widths[col] -= 1
-                total_width = sum(col_widths.values()) + (len(col_names)-1)*SPACING
-        header = (" " * SPACING).join(f"{col:<{col_widths[col]}}" for col in col_names)
-        print(header)
-        print("-" * min(term_width, len(header)))
-        for r in rows:
-            line = (" " * SPACING).join(
-                f"{str(r[col])[:col_widths[col]]:<{col_widths[col]}}" for col in col_names
-            )
-            print(line)
-        total_pages = (len(results) - 1) // page_size + 1 if results else 1
-        print(f"\n[Page {page+1}/{total_pages}]   [Type F1 for Help | F2 for Project Help | F3 for Credits]\n")
-        if selection:
-            if len(selection) > 25:
-                print(f"Selected manifests: {len(selection)}")
-            else:
-                print("Selected manifests:")
-                print(", ".join(selection))
-        else:
-            print("Selected manifests: (none)")
-        print("\nControls:")
-        print("  [e] next page  [q] previous page  [0] select all results on this filter")
-        print("  [j] switch project  [v] version  [r] realm  [p] platform")
-        print("  [d] done (start download/processing of selected manifests)")
-        print("  [x] back to menu\n")
-        print("Select/Deselect an entry by entering it's Idx number")
-        print()
-        choice = input_with_help("Choose : ").strip().lower()
-        if choice == "__REDRAW__":
-            continue
-        if choice == "e" and end < len(results):
-            page += 1
-            continue
-        if choice == "q" and page > 0:
-            page -= 1
-            continue
-        if choice == "0":
-            if selection_exceeds_limit(source, len(results)):
-                print(f"[Error] Too many entries selected ({len(results)}). Max allowed is 100.")
-                input_with_help("Press Enter to continue...")
-                continue
-            selection = {mid for mid, _ in results}
-            set_selection(source, project, selection)
-            print(f"[Info] Selected {len(selection)} manifests.")
-            input_with_help("Press Enter to continue...")
-            continue
-        if choice == "d":
-            if not selection:
-                print("[Warn] No manifests selected. Select at least one index before pressing 'd'.")
-                input_with_help("Press Enter to continue...")
-                continue
-            selected_results = [item for item in results if item[0] in selection]
-            realm_return = realm_display if realm_set else None
-            return project, selected_results, realm_return, plat
-        if choice == "j":
-            clear_selection_for(source, project)
-            draw_project_selection(projects)
-            idx = ask_number("Select project: ", 1, len(projects), redraw=lambda: draw_project_selection(projects))
-            project = projects[idx - 1]
-            regex, realm_mode, realm_set, plat, page = "", "OR", None, None, 0
-            selection = set(get_selection(source, project))
-            continue
-        if choice == "v":
-            while True:
-                regex_input = input_with_help("Enter version regex (blank for all): ").strip()
-                if regex_input == "__REDRAW__":
+            sel=self.tree.selection()
+            if not sel:
+                messagebox.showinfo("No selection","Select one or more entries or mark them with the checkbox in the first column.")
+                return
+            mids=list(sel)
+        dest_base=ARCHIVE_DIR if self.current_mode=="archive" else CACHE_DIR
+        self._preserve_selection=set(mids)
+        def worker():
+            self._log(f"Downloading {len(mids)} manifest(s)...")
+            for mid in mids:
+                mpath=dest_base/project/"releases"/f"{mid}.manifest"
+                if mpath.exists():
+                    self._log(f"Manifest already present: {mid}")
                     continue
-                regex = regex_input
-                break
-            page = 0
-            clear_selection_for(source, project)
-            selection = set()
-            continue
-        if choice == "r":
-            realms = sorted({r for _, e in results for r in e.get("realms", [])})
-            if not realms:
-                print("[Warn] No realms available.")
-                input_with_help("Press Enter to continue...")
-            else:
-                new_mode, new_set = select_realms_interactive(realms, current_mode=realm_mode, current_set=realm_set)
-                if new_mode is None and new_set is None:
-                    pass
+                self._log(f"Downloading manifest {mid}...")
+                m=download_manifest(project,mid,dest_base=dest_base)
+                if m:
+                    self._log(f"Saved manifest: {m}")
                 else:
-                    realm_mode = new_mode
-                    realm_set = set(new_set) if new_set else None
-            page = 0
-            clear_selection_for(source, project)
-            selection = set()
-            continue
-        if choice == "p":
-            plats = sorted({e.get("platform", "unknown") for _, e in results})
-            if not plats:
-                print("[Warn] No platforms available.")
-                input_with_help("Press Enter to continue...")
-            else:
-                print("Available platforms:")
-                print_indexed_grid(plats, per_row=5, zero_label="ANY")
-                pidx = ask_number("Select platform (0=ANY): ", 0, len(plats))
-                plat = None if pidx == 0 else plats[pidx - 1]
-            page = 0
-            clear_selection_for(source, project)
-            selection = set()
-            continue
-        if choice == "x":
-            clear_selection_for(source, project)
-            clear_screen()
-            return project, [], None, plat
-        if choice.isdigit():
-            num = int(choice)
-            if 1 <= num <= len(results):
-                mid = results[num - 1][0]
-                if mid in selection:
-                    selection.remove(mid)
-                    print(f"[Info] Deselected {mid}")
-                else:
-                    selection.add(mid)
-                    print(f"[Info] Selected {mid}")
-                set_selection(source, project, selection)
-                input_with_help("Press Enter to continue...")
-                continue
-            else:
-                print("Invalid index.")
-                input_with_help("Press Enter to continue...")
-                continue
-        print("Invalid input.")
-        input_with_help("Press Enter to continue...")
+                    self._log(f"[Warn] Manifest {mid} not found on CDN.")
+            self.after(200,lambda:(self._refresh_cache_info(),self._apply_filter()))
+            self._log("Manifest download(s) complete.")
+        threading.Thread(target=worker,daemon=True).start()
 
-def confirm_and_compute_sizes_loop(project, manifest_ids, parsed, use_archive=False):
-    if not manifest_ids:
-        print("[Error] No manifests provided to confirm_and_compute_sizes_loop.")
-        return False, [], None
-    while True:
-        aggregated_langs = sorted({lang for info in parsed.values() for lang in (info.get('langs') or [])})
-        first_mid = manifest_ids[0]
-        langs_str = prompt_languages(project, first_mid, aggregated_langs)
-        if langs_str == "__REDRAW__":
-            continue
-        selected_langs = [] if langs_str is None else (langs_str.split("|") if isinstance(langs_str, str) else langs_str)
-        file_filter = None
-        while True:
-            filter_input = input_with_help("Enter optional file filter regex (or press Enter to skip): ").strip()
-            if filter_input == "__REDRAW__":
-                break
-            if filter_input:
+    def _gather_languages_for_manifests(self,project,mids,dest_base):
+        langs=set()
+        for mid in mids:
+            meta=CACHE_DIR/project/"metadata"/f"{mid}.txt"
+            if not meta.exists():
+                mpath=dest_base/project/"releases"/f"{mid}.manifest"
+                if not mpath.exists():
+                    mpath=download_manifest(project,mid,dest_base=dest_base)
+                if mpath and mpath.exists() and RMAN_LS.exists():
+                    lines=run_rman_ls_cmd(mpath)
+                    if lines:
+                        meta.parent.mkdir(parents=True,exist_ok=True)
+                        meta.write_text("\n".join(lines),encoding="utf-8")
+            if meta.exists():
                 try:
-                    re.compile(filter_input)
-                    file_filter = filter_input
-                except re.error:
-                    print("[Error] Invalid regex pattern. Skipping file filter.")
-                    file_filter = None
-            break
-        if filter_input == "__REDRAW__":
-            continue
-        per_manifest = []
-        total_bytes = 0
-        missing_meta_count = 0
-        for mid in manifest_ids:
-            size_bytes = compute_manifest_size_from_metadata(
-                project, mid,
-                selected_langs if selected_langs else None,
-                file_filter,
-                use_archive=use_archive
-            )
-            if size_bytes is None:
-                per_manifest.append((mid, None))
-                missing_meta_count += 1
-            else:
-                per_manifest.append((mid, size_bytes))
-                total_bytes += size_bytes
-        print("\nEstimated download sizes with current filters:")
-        if len(manifest_ids) > 25:
-            print(f"  Selected manifests: {len(manifest_ids)} (details suppressed for large selection)")
-        elif len(manifest_ids) > 10:
-            print(f"  Selected manifests: {len(manifest_ids)}")
-        if len(manifest_ids) > 10:
-            print(f"\n  Total estimated size: {_format_gb(total_bytes)} ({total_bytes} bytes)")
-            if missing_meta_count:
-                print(f"  Note: {missing_meta_count} manifest(s) had missing or unreadable metadata and were excluded from the estimate.")
+                    text=meta.read_text(encoding="utf-8")
+                except Exception:
+                    continue
+                for ln in text.splitlines():
+                    parts=ln.rsplit(",",1)
+                    if len(parts)==2:
+                        lang_field=parts[1].strip()
+                        for p in re.split(r'[;,\|]',lang_field):
+                            p=p.strip()
+                            if p:
+                                langs.add(p)
+        if not langs:
+            langs.add("none")
+        return sorted(langs)
+
+    def _open_language_selector(self,project,mids,dest_base):
+        langs=self._gather_languages_for_manifests(project,mids,dest_base)
+        popup=tk.Toplevel(self)
+        popup.transient(self); popup.grab_set(); popup.title("Language selection")
+        popup.geometry("600x520")
+        frame=ttk.Frame(popup); frame.pack(fill=tk.BOTH,expand=True,padx=8,pady=8)
+        canvas=tk.Canvas(frame); canvas.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        vsb=ttk.Scrollbar(frame,orient=tk.VERTICAL,command=canvas.yview); vsb.pack(side=tk.RIGHT,fill=tk.Y)
+        canvas.configure(yscrollcommand=vsb.set)
+        inner=ttk.Frame(canvas); canvas.create_window((0,0),window=inner,anchor="nw")
+        def on_config(e): canvas.configure(scrollregion=canvas.bbox("all"))
+        inner.bind("<Configure>",on_config)
+        vars={}
+        cols=3
+        for i,val in enumerate(langs):
+            var=tk.BooleanVar(value=False)
+            chk=ttk.Checkbutton(inner,text=val,variable=var)
+            r=i//cols; c=i%cols
+            chk.grid(row=r,column=c,sticky=tk.W,padx=6,pady=2)
+            vars[val]=var
+        entry_var=tk.StringVar()
+        entry=ttk.Entry(popup,textvariable=entry_var,width=60)
+        entry.pack(fill=tk.X,padx=8,pady=(0,6))
+        def sync_from_checkboxes():
+            sel=[k for k,v in vars.items() if v.get()]
+            entry_var.set("|".join(sel))
+        def sync_from_entry(*_):
+            txt=entry_var.get().strip()
+            toks=[t.strip() for t in txt.split("|") if t.strip()]
+            for k in vars:
+                vars[k].set(k in toks)
+        for v in vars.values():
+            v.trace_add("write",lambda *a:sync_from_checkboxes())
+        entry_var.trace_add("write",sync_from_entry)
+        btns=ttk.Frame(popup); btns.pack(pady=6)
+        ttk.Button(btns,text="Apply",command=lambda:popup.destroy()).pack(side=tk.LEFT,padx=6)
+        ttk.Button(btns,text="Cancel",command=lambda:(entry_var.set(""),popup.destroy())).pack(side=tk.LEFT,padx=6)
+        self.wait_window(popup)
+        return entry_var.get().strip()
+
+    def _on_run_rman_dl(self):
+        project=self.selected_project
+        if project is None:
+            return
+        marked_set=self.marked.get(project,set())
+        if marked_set:
+            mids=list(marked_set)
         else:
-            for mid, sz in per_manifest:
-                if sz is None:
-                    print(f"  {mid}: metadata missing or unreadable (excluded from estimate)")
+            sel=self.tree.selection()
+            if not sel:
+                messagebox.showinfo("No selection","Select one or more entries or mark them with the checkbox in the first column.")
+                return
+            mids=list(sel)
+        mode=self.current_mode
+        dest_base=ARCHIVE_DIR if mode=="archive" else CACHE_DIR
+        self._preserve_selection=set(mids)
+        lang_input=self._open_language_selector(project,mids,dest_base)
+        if lang_input is None:
+            return
+        file_filter=simple_input_dialog(self,"File path regex filter (leave blank for all):")
+        if file_filter is None:
+            return
+        multithreaded=self.multithread_var.get()
+        # reset abort flags for a fresh run
+        self._abort_all_requested=False
+        self._abort_current_requested=False
+
+        def worker():
+            self._log("Estimating sizes (using metadata / rman-ls where available)...")
+            per=[]
+            total=0
+            missing=[]
+            for mid in mids:
+                size=compute_manifest_size_from_metadata(project,mid,selected_langs=lang_input or None,file_filter_regex=file_filter or None)
+                if size is None:
+                    mpath=dest_base/project/"releases"/f"{mid}.manifest"
+                    if not mpath.exists():
+                        self._log(f"Downloading manifest {mid} for size estimation...")
+                        mpath=download_manifest(project,mid,dest_base=dest_base)
+                    if mpath and mpath.exists() and RMAN_LS.exists():
+                        lines=run_rman_ls_cmd(mpath,filter_lang=lang_input or None,filter_path=file_filter or None)
+                        if lines:
+                            meta_dir=CACHE_DIR/project/"metadata"
+                            meta_dir.mkdir(parents=True,exist_ok=True)
+                            (meta_dir/f"{mid}.txt").write_text("\n".join(lines),encoding="utf-8")
+                            size=compute_manifest_size_from_metadata(project,mid,selected_langs=lang_input or None,file_filter_regex=file_filter or None)
+                if size is None:
+                    per.append((mid,None)); missing.append(mid)
                 else:
-                    print(f"  {mid}: {_format_gb(sz)} ({sz} bytes)")
-            print(f"\n  Total estimated size: {_format_gb(total_bytes)} ({total_bytes} bytes)")
-        if total_bytes >= 100 * 1024**3:
-            print("\n[Warn] Total estimated size is >= 100 GB. Proceed with caution.")
-        while True:
-            confirm = input_with_help("Proceed with download? (y to proceed / r to retry filters / c to cancel selection): ").strip().lower()
-            if confirm == "__REDRAW__":
-                continue
-            if confirm == "y":
-                return True, selected_langs, file_filter
-            if confirm == "r":
-                break
-            if confirm == "c":
-                print("Cancelled. Returning to selection.")
-                return False, selected_langs, file_filter
-            print("Please enter 'y' to proceed, 'r' to retry filters, or 'n' to cancel.")
+                    per.append((mid,size)); total+=size
+            lines=[]
+            for mid,sz in per:
+                if sz is None:
+                    lines.append(f"{mid}: size unknown (metadata missing)")
+                else:
+                    lines.append(f"{mid}: {human_readable_bytes(sz)} ({sz} bytes)")
+            total_line = f"Total estimated: {human_readable_bytes(total)} ({total} bytes)"
 
-def handle_downloads(project, results, mode="download", use_archive=False):
-    if not results:
-        return
-    manifest_ids = [mid for mid, _ in results]
-    allow_manifest_download = True if mode == "download" else False
-    if mode == "archive":
-        use_archive = True
+            if len(mids) > 10:
+                display_text = f"{len(mids)} manifests selected.\n\n{total_line}\n\nNote: Detailed per-manifest sizes are available in the log."
+            else:
+                display_text = "\n".join(lines) + "\n\n" + total_line
+                if missing:
+                    display_text += "\n\nNote: Some manifests had missing metadata and were excluded from the estimate."
 
-    parsed = prefetch_and_parse_manifests(project, manifest_ids, use_archive=use_archive, allow_manifest_download=allow_manifest_download)
-    if not parsed:
-        print("[Error] No manifests available to process after prefetch/parse.")
-        input_with_help("Press Enter to continue...")
-        return
-    if mode == "m":
-        print("[Info] Manifests and metadata prepared (manifest-only mode).")
-        input_with_help("Press Enter to continue...")
-        return
-    proceed_result = confirm_and_compute_sizes_loop(project, manifest_ids, parsed, use_archive=use_archive)
-    if not proceed_result:
-        print("[Info] Download cancelled or aborted.")
-        return
-    proceed, selected_langs, file_filter = proceed_result
-    if not proceed:
-        print("[Info] Download cancelled. You can adjust filters and retry.")
-        return
-    lang_str = "|".join(selected_langs) if selected_langs else None
-    for mid, entry in results:
-        if mid not in parsed:
-            print(f"[Warn] Manifest {mid} was not prepared (skipping).")
-            continue
-        mpath = parsed[mid].get('manifest_path')
-        if not mpath or not mpath.exists():
-            print(f"[Warn] Manifest file for {mid} missing at expected path {mpath}; skipping.")
-            continue
-        outdir = build_output_dir(project, mid, entry, lang_str)
-        if lang_str:
-            print(f"[Info] Final language filter for {mid}: {lang_str}")
+            confirm = messagebox.askyesno("Confirm rman-dl", display_text + "\n\nProceed to run rman-dl for these manifests?")
+            if not confirm:
+                self._log("rman-dl cancelled by user.")
+                return
+            self._log("Starting rman-dl processes (sequential, one manifest at a time)...")
+            for mid in mids:
+                # if abort-all requested, stop starting new jobs
+                if self._abort_all_requested:
+                    self._log("Abort (All) requested; stopping queued rman-dl jobs.")
+                    break
+                mpath=dest_base/project/"releases"/f"{mid}.manifest"
+                if not mpath.exists():
+                    self._log(f"Downloading manifest {mid} before rman-dl...")
+                    mpath=download_manifest(project,mid,dest_base=dest_base)
+                    if not mpath:
+                        self._log(f"[Warn] Manifest {mid} not found; skipping rman-dl.")
+                        continue
+                entry=self.catalog.get(project,{}).get(mid,{})
+                version=sanitize_version(entry.get("version","unknown"))
+                artifact_type=sanitize_artifact(entry.get("artifact_type","unknown"))
+                base=f"{project}-{version}-{artifact_type}-{mid}"
+                outdir=BUILDS_DIR/project/base
+                outdir.mkdir(parents=True,exist_ok=True)
+                try:
+                    self._log(f"Starting rman-dl for {mid} (multithreaded={multithreaded})...")
+                    proc=run_rman_dl_cmd(project,mpath,outdir,langs=lang_input or None,file_filter=file_filter or None,mode=mode,multithreaded=multithreaded)
+                    self.running_procs.append(proc)
+                    self._stream_proc_to_log(proc,mid)
+                    # Wait for this rman-dl process to finish before starting the next one
+                    while True:
+                        # periodically check for abort_current or abort_all
+                        if self._abort_current_requested:
+                            try:
+                                if os.name=="nt":
+                                    proc.terminate()
+                                else:
+                                    os.kill(proc.pid,signal.SIGTERM)
+                                self._log(f"Abort (Current) requested; terminated pid {getattr(proc,'pid',None)}")
+                            except Exception as ex:
+                                self._log(f"Failed to terminate current pid {getattr(proc,'pid',None)}: {ex}")
+                            self._abort_current_requested=False
+                        if self._abort_all_requested:
+                            try:
+                                if os.name=="nt":
+                                    proc.terminate()
+                                else:
+                                    os.kill(proc.pid,signal.SIGTERM)
+                                self._log(f"Abort (All) requested; terminated pid {getattr(proc,'pid',None)}")
+                            except Exception as ex:
+                                self._log(f"Failed to terminate pid {getattr(proc,'pid',None)}: {ex}")
+                            break
+                        ret = proc.poll()
+                        if ret is not None:
+                            break
+                        time.sleep(0.2)
+                    # ensure process finished
+                    try:
+                        rc=proc.wait(timeout=1)
+                    except Exception:
+                        rc=proc.returncode
+                    self._log(f"rman-dl finished for {mid} with exit code {proc.returncode}")
+                except FileNotFoundError as ex:
+                    self._log(f"[Error] {ex}")
+                    messagebox.showerror("rman-dl missing",str(ex))
+                    return
+                except Exception as ex:
+                    self._log(f"[Error] rman-dl failed for {mid}: {ex}")
+            self._log("All rman-dl jobs completed or aborted.")
+            # reset abort flags after run
+            self._abort_all_requested=False
+            self._abort_current_requested=False
+
+        threading.Thread(target=worker,daemon=True).start()
+
+    def _stream_proc_to_log(self,proc,mid):
+        def reader():
+            try:
+                for line in proc.stdout:
+                    self._log(f"[{mid}] {line.rstrip()}")
+                proc.wait()
+                self._log(f"[{mid}] Process exited with code {proc.returncode}")
+            except Exception as ex:
+                self._log(f"[{mid}] Error reading process output: {ex}")
+            finally:
+                try:
+                    self.running_procs.remove(proc)
+                except Exception:
+                    pass
+                self.after(200,lambda:(self._refresh_cache_info(),self._apply_filter()))
+        threading.Thread(target=reader,daemon=True).start()
+
+    def _abort_current_proc(self):
+        # terminate the currently running process (if any)
+        if not self.running_procs:
+            self._log("No running rman-dl processes to abort (current).")
+            return
+        # set flag so worker loop will handle termination gracefully
+        self._abort_current_requested=True
+        self._log("Abort (Current) requested; attempting to terminate current process.")
+
+    def _abort_all_procs(self):
+        # abort current and prevent queued jobs from starting
+        if not self.running_procs and not self._is_worker_running():
+            self._log("No running rman-dl processes to abort (all).")
+            return
+        ok=messagebox.askyesno("Abort downloads","Terminate all running and queued rman-dl processes?")
+        if not ok:
+            return
+        self._abort_all_requested=True
+        # terminate any currently running processes immediately
+        for proc in list(self.running_procs):
+            try:
+                if os.name=="nt":
+                    proc.terminate()
+                else:
+                    os.kill(proc.pid,signal.SIGTERM)
+                self._log(f"Sent terminate to pid {proc.pid}")
+            except Exception as ex:
+                self._log(f"Failed to terminate pid {getattr(proc,'pid',None)}: {ex}")
+        # running_procs will be cleaned up by reader threads
+        self._log("Abort (All) requested; terminating running processes and preventing queued jobs.")
+
+    def _is_worker_running(self):
+        # heuristic: if any rman-dl process exists or if abort flags are set
+        return bool(self.running_procs)
+
+    def _open_builds_folder(self):
+        path=BUILDS_DIR
+        path.mkdir(parents=True,exist_ok=True)
+        if os.name=="nt":
+            os.startfile(path)
         else:
-            print(f"[Info] No language filter applied for {mid} (downloading all)")
-        run_rman_dl(project, mpath, outdir, langs=lang_str, file_filter=file_filter, mode=mode)
-    check_cache_size(project)
-    print("\nDownload complete.")
-    input("Press Enter to return to the main menu...")
-    clear_screen()
+            subprocess.Popen(["xdg-open",str(path)])
 
-def draw_main_menu():
-    clear_screen()
-    clear_all_selections()
-    print("\n=== Main Menu ===   [Type 'F1' for Help | 'F2' for Project Help | 'F3' for Credits]")
-    print("1) Download Mode")
-    print("2) Cache Mode")
-    print("3) Archive Mode")
-    print("4) Download or Update Catalog and Tools")
-    print("0) Exit")
+    def _compute_cache_info(self,project):
+        base=CACHE_DIR/project
+        manifest_count=0
+        total_bytes=0
+        bundle_exists=False
+        if base.exists():
+            for p in base.rglob("*.manifest"):
+                manifest_count+=1
+            for f in base.rglob("*"):
+                if f.is_file():
+                    try:
+                        total_bytes+=f.stat().st_size
+                    except Exception:
+                        pass
+            bundles_dir=base/"bundles"
+            if bundles_dir.exists():
+                for b in bundles_dir.glob("*.bundle"):
+                    bundle_exists=True
+                    break
+        return manifest_count,total_bytes,bundle_exists
 
+    def _refresh_cache_info(self):
+        project=self.selected_project
+        if not project:
+            self.cache_count_var.set("Manifests: 0")
+            self.cache_size_var.set("Cache size: 0 B")
+            self.cache_bundle_var.set("Bundle: (none)")
+            return
+        def worker():
+            self._set_status("Refreshing cache info...")
+            count,size,bundle=self._compute_cache_info(project)
+            self.cache_count_var.set(f"Manifests: {count}")
+            self.cache_size_var.set(f"Cache size: {human_mb(size)}")
+            self.cache_bundle_var.set(f"Bundle: {'present' if bundle else '(none)'}")
+            self._set_status("Cache info updated.")
+        threading.Thread(target=worker,daemon=True).start()
 
-def main_menu():
-    set_console_size(180, 48)
-    while True:
-        draw_main_menu()
-        choice = input_with_help("Select: ")
-        if choice == "__REDRAW__":
-            continue
-        choice = choice.strip()
-        if choice == "4":
-            update_catalog()
-            input("Press Enter to return to the main menu...")
-            continue
-        if choice == "1":
-            project, results, realm, plat = search_data(source="catalog")
-            if not results:
-                continue
-            if selection_exceeds_limit("catalog", len(results)):
-                print(f"[Error] Too many entries selected ({len(results)}). Max allowed is 100.")
-                input_with_help("Press Enter to continue...")
-                continue
-            if len(results) > 10:
-                while True:
-                    confirm = input_with_help(f"[Warning] You are about to download {len(results)} entries. Proceed? (y/N): ").strip().lower()
-                    if confirm == "__REDRAW__":
-                        continue
-                    if confirm == "y":
-                        break
-                    if confirm == "n":
-                        print("Cancelled.")
-                        break
-                    print("Please enter 'y' to proceed or 'n' to cancel.")
-                if confirm != "y":
-                    continue
-            mode = "d"
-            handle_downloads(project, results, mode="download", use_archive=False)
-        elif choice == "2":
-            project, results, realm, plat = search_data(source="cache")
-            if not results:
-                continue
-            if selection_exceeds_limit("cache", len(results)):
-                print(f"[Error] Too many entries selected ({len(results)}). Max allowed is 100.")
-                input_with_help("Press Enter to continue...")
-                continue
-            if len(results) > 10:
-                while True:
-                    confirm = input_with_help(f"[Warning] You are about to download {len(results)} entries. Proceed? (y/N): ").strip().lower()
-                    if confirm == "__REDRAW__":
-                        continue
-                    if confirm == "y":
-                        break
-                    if confirm == "n":
-                        print("Cancelled.")
-                        break
-                    print("Please enter 'y' to proceed or 'n' to cancel.")
-                if confirm != "y":
-                    continue
-            mode = "d"
-            handle_downloads(project, results, mode="cache", use_archive=False)
-        elif choice == "3":
-            project, results, realm, plat = search_data(source="archive")
-            if not results:
-                continue
-            if selection_exceeds_limit("archive", len(results)):
-                print(f"[Error] Too many entries selected ({len(results)}). Max allowed is 100.")
-                input_with_help("Press Enter to continue...")
-                continue
-            if len(results) > 10:
-                while True:
-                    confirm = input_with_help(f"[Warning] You are about to download {len(results)} entries. Proceed? (y/N): ").strip().lower()
-                    if confirm == "__REDRAW__":
-                        continue
-                    if confirm == "y":
-                        break
-                    if confirm == "n":
-                        print("Cancelled.")
-                        break
-                    print("Please enter 'y' to proceed or 'n' to cancel.")
-                if confirm != "y":
-                    continue
-            mode = "d"
-            handle_downloads(project, results, mode="archive", use_archive=True)
-        elif choice == "0":
-            print("Exiting.")
-            break
+    def _clear_cache_for_project(self):
+        project=self.selected_project
+        if not project:
+            return
+        ok=messagebox.askyesno("Clear cache",f"Delete cache (manifests, bundles, metadata) for project '{project}'? This cannot be undone.")
+        if not ok:
+            return
+        def worker():
+            base=CACHE_DIR/project
+            try:
+                if base.exists():
+                    shutil.rmtree(base)
+                self._log(f"Cache cleared for project {project}.")
+            except Exception as ex:
+                self._log(f"[Error] Failed to clear cache: {ex}")
+            self.after(200,lambda:(self._refresh_cache_info(),self._apply_filter()))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def _on_column_click(self,col):
+        if self.sort_state.get("col")==col:
+            self.sort_state["reverse"]=not self.sort_state.get("reverse",False)
         else:
-            print("Invalid choice, please try again.")
-            input_with_help("Press Enter to continue...")
+            self.sort_state["col"]=col
+            self.sort_state["reverse"]=False if col!="Timestamp" else True
+        self._apply_filter()
 
-if __name__ == "__main__":
-    main_menu()
+    def _autosize_columns(self):
+        cols=self.tree["columns"]
+        for c in cols:
+            max_text_len=len(c)
+            for i,iid in enumerate(self.tree.get_children()):
+                if i>200:
+                    break
+                val=self.tree.set(iid,c) or ""
+                l=len(str(val))
+                if l>max_text_len:
+                    max_text_len=l
+            neww=max(self._col_min_widths.get(c,80),int(max_text_len*self._char_width*0.95)+20)
+            try:
+                self.tree.column(c,width=neww)
+            except Exception:
+                pass
+
+    def _on_window_resize(self,event):
+        self.after(150,self._autosize_columns)
+        self.after(500,self._save_window_prefs_debounced)
+
+    def _load_window_prefs(self):
+        # We no longer restore window geometry per requirements.
+        mt=self.prefs.get("multithreaded",False)
+        self.multithread_var.set(mt)
+        ps=self.prefs.get("page_size",100)
+        self.page_size.set(str(ps))
+
+    def _save_window_prefs_debounced(self):
+        # We no longer save window geometry; only save relevant prefs.
+        try:
+            self.prefs["multithreaded"]=self.multithread_var.get()
+            self.prefs["page_size"]=self.page_size.get()
+            save_prefs(self.prefs)
+        except Exception:
+            pass
+
+    def _on_close(self):
+        # ensure notes saved before exit
+        try:
+            if self._notes_save_after_id:
+                self.after_cancel(self._notes_save_after_id)
+                self._save_project_notes()
+            else:
+                # also save current notes immediately
+                self._save_project_notes()
+        except Exception:
+            pass
+        self._save_window_prefs_debounced()
+        self.destroy()
+
+def simple_input_dialog(parent,prompt):
+    dlg=tk.Toplevel(parent)
+    dlg.transient(parent); dlg.grab_set(); dlg.title(prompt)
+    tk.Label(dlg,text=prompt).pack(padx=8,pady=8)
+    var=tk.StringVar()
+    entry=ttk.Entry(dlg,textvariable=var,width=60)
+    entry.pack(padx=8,pady=4)
+    entry.focus_set()
+    result={"value":None}
+    def on_ok():
+        result["value"]=var.get().strip(); dlg.destroy()
+    def on_cancel():
+        dlg.destroy()
+    btns=ttk.Frame(dlg); btns.pack(pady=8)
+    ttk.Button(btns,text="OK",command=on_ok).pack(side=tk.LEFT,padx=4)
+    ttk.Button(btns,text="Cancel",command=on_cancel).pack(side=tk.LEFT,padx=4)
+    parent.wait_window(dlg)
+    return result["value"]
+
+if __name__=="__main__":
+    app=DownloadManagerGUI()
+    app.mainloop()

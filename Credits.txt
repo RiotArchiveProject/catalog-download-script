@@ -8,12 +8,15 @@ Special thanks to the following people:
 	moonshadow565: rman toolset and various utilities, the first of 2 core toolsets of this project, consistently updating it to keep this project going, and a long list of helpful wisdom at 4am
 		https://github.com/moonshadow565/rman
 	
+	Lars: For adding multithreaded support to rman and helping me learn how to compile what I needed.
+		https://github.com/BlueBottleGG/rman
+	
 	Morilli: ManifestDownloader, and the second of 2 core toolsets, original intake scripts and utilities for LoL, LoR, Valorant, Riot Client, and fixing hachoir
 		https://github.com/Morilli/ManifestDownloader
 		https://github.com/Morilli/riot-manifests
 	
-	yretenai: DepotArchiver (legit thank you for this), making an alternative to AssetStudio for Riot Forge projects, extra utilities, and the donations to the project for so long so early on
-		https://github.com/yretenai
+	neptuwunium: DepotArchiver (legit thank you for this), making an alternative to AssetStudio for Riot Forge projects, extra utilities, and the donations to the project for so long so early on
+		https://github.com/neptuwunium
 	
 	Ray: For handling the events in the client and backing up those for community dragon, when I couldn't
 		https://universe.communitydragon.org/
