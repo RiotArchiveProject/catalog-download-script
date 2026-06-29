@@ -58041,6 +58041,16 @@
       "timestamp": "2024-02-14T21:52:38+00:00",
       "size": 3818522
     },
+    "3AFF4421E3D098B5": {
+      "version": "16.14.7919786",
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-06-28T05:20:13+00:00",
+      "size": 17219873
+    },
     "3AFFAC59A264C15E": {
       "version": "13.13.5176152",
       "platforms": [
@@ -75390,6 +75400,15 @@
       "artifact_type": "lol-standalone-client-pbe-vn",
       "timestamp": "2023-09-27T11:45:26+00:00",
       "size": 29025
+    },
+    "51B537B547E0AE8C": {
+      "version": "16.14.7919786",
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-06-28T05:17:29+00:00",
+      "size": 17315169
     },
     "51B76EAB69CBE752": {
       "version": "16.3.7412792",
@@ -105232,6 +105251,15 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2026-03-04T21:02:32+00:00",
       "size": 15714372
+    },
+    "79D0784667BCE877": {
+      "version": "16.14.7919786",
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-06-28T05:18:34+00:00",
+      "size": 17173874
     },
     "79D25C2631570486": {
       "version": "12.5.4250423",
@@ -180797,6 +180825,16 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2021-11-06T19:39:13+00:00",
       "size": 14109471
+    },
+    "E1BAE8EFB88F8AEB": {
+      "version": "16.14.7919786",
+      "platforms": [
+        "Android",
+        "iOS"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-06-28T05:22:32+00:00",
+      "size": 5083876
     },
     "E1BB2FF8DC1A07A3": {
       "version": "14.8.5759209",
