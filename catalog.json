@@ -67741,9 +67741,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-26T08:21:43+00:00",
@@ -124551,9 +124549,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-25T11:48:05+00:00",
@@ -153690,10 +153686,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-27T00:25:39+00:00",
@@ -175922,10 +175916,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-25T11:46:08+00:00",
@@ -189406,9 +189398,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-24T14:57:07+00:00",
@@ -202542,9 +202532,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-24T02:42:40+00:00",
@@ -215605,9 +215593,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-27T00:31:33+00:00",
@@ -223205,10 +223191,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-23T12:22:05+00:00",
@@ -225233,9 +225217,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-23T12:17:54+00:00",
@@ -229968,10 +229950,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-23T22:39:05+00:00",
@@ -232482,10 +232462,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-24T14:58:53+00:00",
@@ -236852,10 +236830,8 @@
         "VN2"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-26T01:07:23+00:00",
@@ -239943,10 +239919,8 @@
         "VN2"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-24T02:43:17+00:00",
@@ -245766,9 +245740,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-23T22:37:29+00:00",
@@ -248907,10 +248879,8 @@
         "PBE1"
       ],
       "platforms": [
-        "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Mac",
+        "Windows"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-26T08:10:48+00:00",
@@ -260041,9 +260011,7 @@
       ],
       "platforms": [
         "iOS",
-        "Android",
-        "Windows",
-        "Mac"
+        "Android"
       ],
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2026-06-26T01:07:10+00:00",

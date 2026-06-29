@@ -53,7 +53,6 @@ def _ensure_packages(packages, gui_log_callback=None):
             return False
     return True
 
-# call early with list of (pip-name, import-name)
 if not _ensure_packages([("requests","requests")]):
     try:
         _tk.Tk().withdraw()
@@ -356,10 +355,8 @@ class DownloadManagerGUI(tk.Tk):
         self._preserve_selection=None
         self.running_procs=[]
         self.multithread_var=tk.BooleanVar(value=self.prefs.get("multithreaded",False))
-        # abort control flags
         self._abort_all_requested=False
         self._abort_current_requested=False
-        # notes save debounce id
         self._notes_save_after_id=None
         self._build_ui()
         self._load_window_prefs()
@@ -380,9 +377,7 @@ class DownloadManagerGUI(tk.Tk):
         mode_combo.bind("<<ComboboxSelected>>",self._on_mode_change)
         ttk.Button(top_toolbar,text="Select All",command=self._select_all_filtered).pack(side=tk.LEFT,padx=6)
         ttk.Button(top_toolbar,text="Clear Selections",command=self._clear_selections).pack(side=tk.LEFT,padx=6)
-        ttk.Button(top_toolbar,text="Download Manifest(s)",command=self._on_download_manifest).pack(side=tk.LEFT,padx=6)
-        ttk.Button(top_toolbar,text="Download Data",command=self._on_run_rman_dl).pack(side=tk.LEFT,padx=6)
-        # Abort (Current) and Abort (All)
+        ttk.Button(top_toolbar,text="Download Selected",command=self._on_run_rman_dl).pack(side=tk.LEFT,padx=6)
         ttk.Button(top_toolbar,text="Abort (Current)",command=self._abort_current_proc).pack(side=tk.LEFT,padx=6)
         ttk.Button(top_toolbar,text="Abort (All)",command=self._abort_all_procs).pack(side=tk.LEFT,padx=6)
         ttk.Checkbutton(top_toolbar,text="Multithreaded",variable=self.multithread_var).pack(side=tk.LEFT,padx=6)
@@ -515,13 +510,11 @@ class DownloadManagerGUI(tk.Tk):
         ttk.Label(right_frame,text="Notes").pack(anchor=tk.W,padx=6,pady=(6,0))
         details_frame=ttk.Frame(right_frame)
         details_frame.pack(fill=tk.BOTH,expand=True,padx=6,pady=6)
-        # Notes text area (multi-line, editable, saved per-project)
         self.notes_text=tk.Text(details_frame,height=20,wrap=tk.WORD,undo=True)
         self.notes_text.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
         det_v=ttk.Scrollbar(details_frame,orient=tk.VERTICAL,command=self.notes_text.yview)
         det_v.pack(side=tk.RIGHT,fill=tk.Y)
         self.notes_text.config(yscrollcommand=det_v.set)
-        # bind modified event for auto-save (debounced)
         self.notes_text.bind("<<Modified>>",self._on_notes_modified)
 
         self.status_var=tk.StringVar(value="Ready")
@@ -633,7 +626,6 @@ class DownloadManagerGUI(tk.Tk):
         self.current_page=1
         self._apply_filter()
         self._refresh_cache_info()
-        # load project notes into notes_text
         self._load_project_notes()
 
     def _populate_page(self):
@@ -856,7 +848,12 @@ class DownloadManagerGUI(tk.Tk):
     def _open_platform_popup(self):
         if not self.selected_project:
             return
-        values=sorted({normalize_platform(e) for _,e in self.catalog.get(self.selected_project,{}).items()})
+        unique_plats=set()
+        for _, e in self.catalog.get(self.selected_project,{}).items():
+            plat_field = normalize_platform(e)
+            for tok in [p.strip() for p in plat_field.split(",") if p.strip()]:
+                unique_plats.add(tok)
+        values=sorted(unique_plats)
         self._open_multi_choice_popup("Platform(s)",values,self.filter_platform)
 
     def _open_artifact_popup(self):
@@ -948,14 +945,11 @@ class DownloadManagerGUI(tk.Tk):
     def _on_entry_select(self):
         sel=self.tree.selection()
         if not sel:
-            # still load project notes when selection cleared
             self._load_project_notes()
             return
-        # selection doesn't change notes (notes are per-project), but keep behavior to ensure notes visible
         self._load_project_notes()
 
     def _load_project_notes(self):
-        # load notes for the selected project into the notes_text widget
         try:
             self.notes_text.delete("1.0",tk.END)
             if self.selected_project:
@@ -969,13 +963,11 @@ class DownloadManagerGUI(tk.Tk):
             pass
 
     def _on_notes_modified(self,event=None):
-        # Debounce saves to avoid excessive disk writes
         try:
             if not self.notes_text.edit_modified():
                 return
         except Exception:
             return
-        # reset modified flag immediately to avoid re-entrancy
         try:
             self.notes_text.edit_modified(False)
         except Exception:
@@ -995,7 +987,6 @@ class DownloadManagerGUI(tk.Tk):
             notes=self.notes_text.get("1.0",tk.END).rstrip("\n")
             self.prefs.setdefault(self.selected_project,{})
             self.prefs[self.selected_project]["notes"]=notes
-            # ensure multithreaded and page_size are preserved in prefs
             self.prefs["multithreaded"]=self.multithread_var.get()
             self.prefs["page_size"]=self.page_size.get()
             save_prefs(self.prefs)
@@ -1023,38 +1014,6 @@ class DownloadManagerGUI(tk.Tk):
         self._preserve_selection=set()
         self._populate_page()
         self._log("Cleared all in-memory selections for current project.")
-
-    def _on_download_manifest(self):
-        project=self.selected_project
-        if project is None:
-            return
-        marked_set=self.marked.get(project,set())
-        if marked_set:
-            mids=list(marked_set)
-        else:
-            sel=self.tree.selection()
-            if not sel:
-                messagebox.showinfo("No selection","Select one or more entries or mark them with the checkbox in the first column.")
-                return
-            mids=list(sel)
-        dest_base=ARCHIVE_DIR if self.current_mode=="archive" else CACHE_DIR
-        self._preserve_selection=set(mids)
-        def worker():
-            self._log(f"Downloading {len(mids)} manifest(s)...")
-            for mid in mids:
-                mpath=dest_base/project/"releases"/f"{mid}.manifest"
-                if mpath.exists():
-                    self._log(f"Manifest already present: {mid}")
-                    continue
-                self._log(f"Downloading manifest {mid}...")
-                m=download_manifest(project,mid,dest_base=dest_base)
-                if m:
-                    self._log(f"Saved manifest: {m}")
-                else:
-                    self._log(f"[Warn] Manifest {mid} not found on CDN.")
-            self.after(200,lambda:(self._refresh_cache_info(),self._apply_filter()))
-            self._log("Manifest download(s) complete.")
-        threading.Thread(target=worker,daemon=True).start()
 
     def _gather_languages_for_manifests(self,project,mids,dest_base):
         langs=set()
@@ -1149,7 +1108,6 @@ class DownloadManagerGUI(tk.Tk):
         if file_filter is None:
             return
         multithreaded=self.multithread_var.get()
-        # reset abort flags for a fresh run
         self._abort_all_requested=False
         self._abort_current_requested=False
 
@@ -1197,7 +1155,6 @@ class DownloadManagerGUI(tk.Tk):
                 return
             self._log("Starting rman-dl processes (sequential, one manifest at a time)...")
             for mid in mids:
-                # if abort-all requested, stop starting new jobs
                 if self._abort_all_requested:
                     self._log("Abort (All) requested; stopping queued rman-dl jobs.")
                     break
@@ -1219,9 +1176,7 @@ class DownloadManagerGUI(tk.Tk):
                     proc=run_rman_dl_cmd(project,mpath,outdir,langs=lang_input or None,file_filter=file_filter or None,mode=mode,multithreaded=multithreaded)
                     self.running_procs.append(proc)
                     self._stream_proc_to_log(proc,mid)
-                    # Wait for this rman-dl process to finish before starting the next one
                     while True:
-                        # periodically check for abort_current or abort_all
                         if self._abort_current_requested:
                             try:
                                 if os.name=="nt":
@@ -1246,7 +1201,6 @@ class DownloadManagerGUI(tk.Tk):
                         if ret is not None:
                             break
                         time.sleep(0.2)
-                    # ensure process finished
                     try:
                         rc=proc.wait(timeout=1)
                     except Exception:
@@ -1259,7 +1213,6 @@ class DownloadManagerGUI(tk.Tk):
                 except Exception as ex:
                     self._log(f"[Error] rman-dl failed for {mid}: {ex}")
             self._log("All rman-dl jobs completed or aborted.")
-            # reset abort flags after run
             self._abort_all_requested=False
             self._abort_current_requested=False
 
@@ -1283,16 +1236,13 @@ class DownloadManagerGUI(tk.Tk):
         threading.Thread(target=reader,daemon=True).start()
 
     def _abort_current_proc(self):
-        # terminate the currently running process (if any)
         if not self.running_procs:
             self._log("No running rman-dl processes to abort (current).")
             return
-        # set flag so worker loop will handle termination gracefully
         self._abort_current_requested=True
         self._log("Abort (Current) requested; attempting to terminate current process.")
 
     def _abort_all_procs(self):
-        # abort current and prevent queued jobs from starting
         if not self.running_procs and not self._is_worker_running():
             self._log("No running rman-dl processes to abort (all).")
             return
@@ -1300,7 +1250,6 @@ class DownloadManagerGUI(tk.Tk):
         if not ok:
             return
         self._abort_all_requested=True
-        # terminate any currently running processes immediately
         for proc in list(self.running_procs):
             try:
                 if os.name=="nt":
@@ -1310,11 +1259,9 @@ class DownloadManagerGUI(tk.Tk):
                 self._log(f"Sent terminate to pid {proc.pid}")
             except Exception as ex:
                 self._log(f"Failed to terminate pid {getattr(proc,'pid',None)}: {ex}")
-        # running_procs will be cleaned up by reader threads
         self._log("Abort (All) requested; terminating running processes and preventing queued jobs.")
 
     def _is_worker_running(self):
-        # heuristic: if any rman-dl process exists or if abort flags are set
         return bool(self.running_procs)
 
     def _open_builds_folder(self):
@@ -1407,17 +1354,17 @@ class DownloadManagerGUI(tk.Tk):
 
     def _on_window_resize(self,event):
         self.after(150,self._autosize_columns)
-        self.after(500,self._save_window_prefs_debounced)
+        # do not save geometry or sash positions here (reverted)
 
     def _load_window_prefs(self):
-        # We no longer restore window geometry per requirements.
+        # only restore simple prefs: multithreaded and page_size; do not restore geometry/sashes
         mt=self.prefs.get("multithreaded",False)
         self.multithread_var.set(mt)
         ps=self.prefs.get("page_size",100)
         self.page_size.set(str(ps))
 
     def _save_window_prefs_debounced(self):
-        # We no longer save window geometry; only save relevant prefs.
+        # only persist minimal prefs
         try:
             self.prefs["multithreaded"]=self.multithread_var.get()
             self.prefs["page_size"]=self.page_size.get()
@@ -1426,17 +1373,18 @@ class DownloadManagerGUI(tk.Tk):
             pass
 
     def _on_close(self):
-        # ensure notes saved before exit
         try:
             if self._notes_save_after_id:
                 self.after_cancel(self._notes_save_after_id)
                 self._save_project_notes()
             else:
-                # also save current notes immediately
                 self._save_project_notes()
         except Exception:
             pass
-        self._save_window_prefs_debounced()
+        try:
+            self._save_window_prefs_debounced()
+        except Exception:
+            pass
         self.destroy()
 
 def simple_input_dialog(parent,prompt):
