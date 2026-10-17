@@ -6472,6 +6472,18 @@
       "timestamp": "2023-07-28T21:50:46+00:00",
       "size": 245182
     },
+    "0F1EF95FF43CB907": {
+      "version": "141.0.0.0_0F1EF95FF43CB907_82",
+      "realms": [
+        "KeystoneFoundationBetaMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-12T19:00:49+00:00",
+      "size": 113982
+    },
     "0F4C480D2DAA0C60": {
       "version": "130.0.5.4441_0F4C480D2DAA0C60_59",
       "realms": [
@@ -6975,6 +6987,18 @@
       "artifact_type": "riot-client",
       "timestamp": "2026-09-17T19:36:43+00:00",
       "size": 119038
+    },
+    "18617C942D542497": {
+      "version": "141.0.6.5101_18617C942D542497_81",
+      "realms": [
+        "KeystoneFoundationBetaWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-14T14:52:22+00:00",
+      "size": 77664
     },
     "189A504F3645061E": {
       "version": "40.16.0.4066802_189A504F3645061E_31",
@@ -8512,6 +8536,18 @@
       "timestamp": "2020-01-31T23:08:18+00:00",
       "size": 142783
     },
+    "326E21D6F2899267": {
+      "version": "141.0.0.0_326E21D6F2899267_82",
+      "realms": [
+        "KeystoneFoundationBetaMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-13T20:09:09+00:00",
+      "size": 114037
+    },
     "32A78563A0D9075D": {
       "version": "88.0.3.1714_32A78563A0D9075D_54",
       "realms": [
@@ -9292,6 +9328,18 @@
       "timestamp": "2024-04-25T18:53:33+00:00",
       "size": 303074
     },
+    "40B1204EC51B5F4D": {
+      "version": "141.0.0.0_40B1204EC51B5F4D_65",
+      "realms": [
+        "KeystoneFoundationLiveMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-14T15:05:19+00:00",
+      "size": 114039
+    },
     "411329C55A06AA70": {
       "version": "129.0.0.0_411329C55A06AA70_57",
       "realms": [
@@ -9459,6 +9507,18 @@
       "artifact_type": "riot-client",
       "timestamp": "2020-02-28T17:08:45+00:00",
       "size": 124968
+    },
+    "437BAC81A5BA755F": {
+      "version": "141.0.6.5101_437BAC81A5BA755F_65",
+      "realms": [
+        "KeystoneFoundationLiveWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-14T15:04:41+00:00",
+      "size": 77640
     },
     "4395B2D878B96F52": {
       "version": "1.9.0.0_4395B2D878B96F52_XX",
@@ -10840,6 +10900,18 @@
       "timestamp": "2023-09-19T18:13:26+00:00",
       "size": 190095
     },
+    "5EE76D83CC5D4716": {
+      "version": "141.0.0.0_5EE76D83CC5D4716_65",
+      "realms": [
+        "KeystoneFoundationLiveMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-13T21:01:49+00:00",
+      "size": 114113
+    },
     "5F20D62E30924C69": {
       "version": "129.0.0.4310_5F20D62E30924C69_73",
       "realms": [
@@ -11343,6 +11415,18 @@
       "artifact_type": "riot-client",
       "timestamp": "2020-05-05T18:24:37+00:00",
       "size": 119383
+    },
+    "66FABD5197064123": {
+      "version": "141.0.4.5083_66FABD5197064123_65",
+      "realms": [
+        "KeystoneFoundationLiveWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-12T20:22:57+00:00",
+      "size": 77814
     },
     "676B7AFEA487E1A0": {
       "version": "124.0.0.0_676B7AFEA487E1A0_73",
@@ -13540,6 +13624,18 @@
       "timestamp": "2024-08-12T17:59:47+00:00",
       "size": 361428
     },
+    "943739B85C184777": {
+      "version": "141.0.4.5083_943739B85C184777_81",
+      "realms": [
+        "KeystoneFoundationBetaWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-12T18:59:49+00:00",
+      "size": 77778
+    },
     "9438B676185D7D4A": {
       "version": "49.0.1.4368454_9438B676185D7D4A_38",
       "realms": [
@@ -14776,6 +14872,18 @@
       "timestamp": "2020-06-09T05:54:46+00:00",
       "size": 119808
     },
+    "AAC7DC0C71C140F5": {
+      "version": "141.0.5.5089_AAC7DC0C71C140F5_65",
+      "realms": [
+        "KeystoneFoundationLiveWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-13T21:00:17+00:00",
+      "size": 77795
+    },
     "AAFA23F38FA46F1E": {
       "version": "1.4.0.0_AAFA23F38FA46F1E_XX",
       "realms": [
@@ -15951,6 +16059,18 @@
       "artifact_type": "riot-client",
       "timestamp": "2022-02-08T21:49:41+00:00",
       "size": 176815
+    },
+    "BD4B77CB4DC7B46D": {
+      "version": "141.0.5.5089_BD4B77CB4DC7B46D_81",
+      "realms": [
+        "KeystoneFoundationBetaWin"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-13T20:09:32+00:00",
+      "size": 77780
     },
     "BD5554D790983B3B": {
       "version": "90.0.0.0_BD5554D790983B3B_72",
@@ -19204,6 +19324,18 @@
       "timestamp": "2022-05-10T23:05:54+00:00",
       "size": 222583
     },
+    "F5A08C3BADDD4E49": {
+      "version": "141.0.0.0_F5A08C3BADDD4E49_65",
+      "realms": [
+        "KeystoneFoundationLiveMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-12T20:20:40+00:00",
+      "size": 113933
+    },
     "F5B0A032A769EF19": {
       "version": "20.13.0.3300145_F5B0A032A769EF19_17",
       "realms": [
@@ -19347,6 +19479,18 @@
       "artifact_type": "riot-client",
       "timestamp": "2020-02-28T21:37:40+00:00",
       "size": 125169
+    },
+    "F7447A7FE2222A57": {
+      "version": "141.0.0.0_F7447A7FE2222A57_82",
+      "realms": [
+        "KeystoneFoundationBetaMac"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "riot-client",
+      "timestamp": "2026-10-14T14:53:23+00:00",
+      "size": 114054
     },
     "F757044717C131B5": {
       "version": "20.18.6.3346856_F757044717C131B5_18",
@@ -35811,6 +35955,18 @@
       "timestamp": "2023-04-27T17:06:26+00:00",
       "size": 18860676
     },
+    "0D2950E9B5BA9934": {
+      "version": "16.21.8284168",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-15T18:51:10+00:00",
+      "size": 2089755
+    },
     "0D2B93FD61C67840": {
       "version": "13.16.5281557",
       "realms": [
@@ -42787,6 +42943,18 @@
       "artifact_type": "lol-standalone-client",
       "timestamp": "2023-07-27T22:01:02+00:00",
       "size": 29593
+    },
+    "129B05E013DCF5AC": {
+      "version": "16.21.8282428",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-14T18:05:52+00:00",
+      "size": 2088438
     },
     "129D5090ABFEAA72": {
       "version": "15.1.6450085",
@@ -50043,6 +50211,18 @@
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2024-07-22T20:08:23+00:00",
       "size": 23951405
+    },
+    "1839E13AA4F8FDD1": {
+      "version": "16.21.8273771",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-12T17:22:30+00:00",
+      "size": 17016621
     },
     "183A49066E41D2E3": {
       "version": "15.14.6926968",
@@ -62243,6 +62423,18 @@
       "timestamp": "2026-01-27T13:56:09+00:00",
       "size": 6267934
     },
+    "22BD668F3A68C604": {
+      "version": "16.21.8284168",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T22:24:39+00:00",
+      "size": 17019364
+    },
     "22BF502E83BA78CF": {
       "version": "13.16.5236616",
       "realms": [
@@ -63061,6 +63253,18 @@
       "artifact_type": "league-client",
       "timestamp": "2023-02-01T07:38:15+00:00",
       "size": 3612573
+    },
+    "2388E002E5B2355B": {
+      "version": "16.21.8273771",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-12T17:22:30+00:00",
+      "size": 17168136
     },
     "239058A0F359EBE6": {
       "version": "14.10.5833415",
@@ -74722,6 +74926,18 @@
       "timestamp": "2024-01-19T00:43:17+00:00",
       "size": 29800
     },
+    "2D09FEF11343279F": {
+      "version": "16.21.8284168",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-15T18:51:10+00:00",
+      "size": 2028275
+    },
     "2D0B464F1FDACA93": {
       "version": "12.18.4707104",
       "realms": [
@@ -80378,6 +80594,18 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2023-08-21T11:46:40+00:00",
       "size": 19619328
+    },
+    "3201A62FC03206DF": {
+      "version": "16.21.8284168",
+      "realms": [
+        "LOLTMNT99"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T22:24:40+00:00",
+      "size": 17167945
     },
     "320484E50E8AACBB": {
       "version": "15.6.6649480",
@@ -109868,6 +110096,18 @@
       "timestamp": "2025-06-13T12:00:08+00:00",
       "size": 27355585
     },
+    "49372501A3554AC5": {
+      "version": "16.21.8277638",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-13T11:28:58+00:00",
+      "size": 17167699
+    },
     "493DE435629FE2D7": {
       "version": "11.12.3792817",
       "realms": [
@@ -126997,6 +127237,18 @@
       "timestamp": "2025-07-29T11:50:06+00:00",
       "size": 6260894
     },
+    "571EAAEC414B9310": {
+      "version": "16.21.8273771",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-12T20:35:26+00:00",
+      "size": 2087915
+    },
     "571F85734B8A9245": {
       "version": "15.12.6860381",
       "realms": [
@@ -130301,6 +130553,20 @@
       "timestamp": "2023-10-27T12:24:49+00:00",
       "size": 3668959
     },
+    "59E7201CF4734664": {
+      "version": "16.21.8284168",
+      "realms": [
+        "LOLTMNT99",
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-10-14T22:24:52+00:00",
+      "size": 17072783
+    },
     "59E825215828AB85": {
       "version": "15.1.6436871",
       "realms": [
@@ -132596,6 +132862,18 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2025-11-04T12:55:14+00:00",
       "size": 28608161
+    },
+    "5BC0F8EB09D84D3A": {
+      "version": "16.21.8289811",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-16T18:43:38+00:00",
+      "size": 2027963
     },
     "5BC5B48018E7437B": {
       "version": "14.19.6218328",
@@ -145847,6 +146125,18 @@
       "timestamp": "2023-10-11T19:29:52+00:00",
       "size": 4308187
     },
+    "669A925904E8C798": {
+      "version": "16.21.8282428",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T11:27:33+00:00",
+      "size": 17168965
+    },
     "669BC6BD8F575BA0": {
       "version": "14.10.5808108",
       "realms": [
@@ -148751,6 +149041,18 @@
       "timestamp": "2025-08-27T02:22:16+00:00",
       "size": 5430032
     },
+    "68E566FF8494FC5C": {
+      "version": "16.21.8282428",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-14T18:05:52+00:00",
+      "size": 2027408
+    },
     "68E9C07BEA750365": {
       "version": "11.1.3503054",
       "realms": [
@@ -149528,6 +149830,18 @@
       "artifact_type": "league-client",
       "timestamp": "2026-08-05T17:54:04+00:00",
       "size": 1987201
+    },
+    "6993AF08A8EC95CB": {
+      "version": "16.21.8277638",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-13T11:28:58+00:00",
+      "size": 17018901
     },
     "69948F9E72DBFE20": {
       "version": "15.1.6482578",
@@ -165011,6 +165325,18 @@
       "timestamp": "2023-07-27T18:20:37+00:00",
       "size": 33073
     },
+    "76513AE4A89C98B1": {
+      "version": "16.21.8277638",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-13T18:47:25+00:00",
+      "size": 2087989
+    },
     "7657DF7FC29907EB": {
       "version": "13.5.4943202",
       "realms": [
@@ -172279,6 +172605,18 @@
       "artifact_type": "lol-standalone-client-vn",
       "timestamp": "2023-08-09T11:47:51+00:00",
       "size": 32309
+    },
+    "7BDC8FD2B5BCAB50": {
+      "version": "16.21.8289811",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-16T00:49:17+00:00",
+      "size": 17018359
     },
     "7BDF14FB1FC07C06": {
       "version": "16.8.7638450",
@@ -187905,6 +188243,18 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2026-07-22T23:50:18+00:00",
       "size": 16813166
+    },
+    "88FEB9B2DFDBBC0A": {
+      "version": "16.21.8273771",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-12T20:35:26+00:00",
+      "size": 2026789
     },
     "88FF97E1C8F68812": {
       "version": "10.8.3156245",
@@ -216428,6 +216778,18 @@
       "timestamp": "2023-01-05T00:41:13+00:00",
       "size": 3108885
     },
+    "9FF07C2FDDF3085C": {
+      "version": "16.21.8284168",
+      "realms": [
+        "LOLTMNT99"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-15T19:59:44+00:00",
+      "size": 2026781
+    },
     "9FF38C47DCE7EBA7": {
       "version": "10.18.3348274",
       "realms": [
@@ -230989,6 +231351,18 @@
       "timestamp": "2022-08-31T21:26:16+00:00",
       "size": 16234077
     },
+    "AC60CC7ABBE81558": {
+      "version": "16.21.8282428",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T11:27:34+00:00",
+      "size": 17018904
+    },
     "AC612F5BA1D96BCB": {
       "version": "12.17.4635490",
       "realms": [
@@ -232027,6 +232401,19 @@
       "artifact_type": "league-client",
       "timestamp": "2020-02-15T01:29:12+00:00",
       "size": 2177054
+    },
+    "AD47640D92F85D0F": {
+      "version": "16.21.8273771",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-10-12T17:22:36+00:00",
+      "size": 17072312
     },
     "AD489B73940687AC": {
       "version": "15.5.6607315",
@@ -236197,6 +236584,19 @@
       "timestamp": "2020-03-26T21:32:00+00:00",
       "size": 24649
     },
+    "B0D155A4F0C8B034": {
+      "version": "16.21.8282428",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-10-14T11:27:40+00:00",
+      "size": 17067238
+    },
     "B0D26239BA3B0B59": {
       "version": "13.17.5282266",
       "realms": [
@@ -237503,6 +237903,19 @@
       "artifact_type": "lol-standalone-client-content",
       "timestamp": "2024-01-11T22:02:11+00:00",
       "size": 4013075
+    },
+    "B1DEB79D61BC0B80": {
+      "version": "16.21.8277638",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-10-13T11:29:06+00:00",
+      "size": 17072383
     },
     "B1E2AF4B3110677A": {
       "version": "12.15.4581416",
@@ -265934,6 +266347,19 @@
       "timestamp": "2024-06-27T18:49:06+00:00",
       "size": 4506963
     },
+    "CA6FC739F12E7105": {
+      "version": "16.21.8289811",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac",
+        "Windows"
+      ],
+      "artifact_type": "lol-standalone-client-content",
+      "timestamp": "2026-10-16T00:49:28+00:00",
+      "size": 17066630
+    },
     "CA74E14988CA0EEE": {
       "version": "12.6.4302793",
       "realms": [
@@ -272330,6 +272756,18 @@
       "artifact_type": "league-client",
       "timestamp": "2023-04-21T11:05:45+00:00",
       "size": 3716088
+    },
+    "CFED15A35D660A83": {
+      "version": "16.21.8284168",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T22:24:40+00:00",
+      "size": 17167930
     },
     "CFF37BE57414F847": {
       "version": "11.10.3733083",
@@ -312430,6 +312868,18 @@
       "timestamp": "2022-01-27T00:48:16+00:00",
       "size": 3079227
     },
+    "F0AEFD611AC99ABA": {
+      "version": "16.21.8289811",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-16T00:49:18+00:00",
+      "size": 17165530
+    },
     "F0AFC2BDEF3576C1": {
       "version": "16.3.7447656",
       "realms": [
@@ -316738,6 +317188,18 @@
       "timestamp": "2023-01-06T18:31:01+00:00",
       "size": 17477158
     },
+    "F42CD0CB81FAA630": {
+      "version": "16.21.8277638",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-13T18:47:25+00:00",
+      "size": 2023523
+    },
     "F43003E1231CF84A": {
       "version": "12.13.4533037",
       "realms": [
@@ -316937,6 +317399,18 @@
       "artifact_type": "lol-game-client",
       "timestamp": "2024-05-13T18:29:33+00:00",
       "size": 22487272
+    },
+    "F45A68A23240AFFF": {
+      "version": "16.21.8284168",
+      "realms": [
+        "LOLTMNT99"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "lol-game-client",
+      "timestamp": "2026-10-14T22:24:40+00:00",
+      "size": 17019413
     },
     "F45B5F4D2703EB03": {
       "version": "11.12.3789229",
@@ -321861,6 +322335,18 @@
       "artifact_type": "league-client",
       "timestamp": "2026-08-20T18:48:47+00:00",
       "size": 1984720
+    },
+    "F81CD4F557AE3086": {
+      "version": "16.21.8289811",
+      "realms": [
+        "PBE1"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "league-client",
+      "timestamp": "2026-10-16T18:43:38+00:00",
+      "size": 2090135
     },
     "F81E5074D4E2FAAF": {
       "version": "14.12.5938939",
@@ -331505,6 +331991,18 @@
       "timestamp": "2026-07-31T18:42:48+00:00",
       "size": 289751
     },
+    "08F4506A902E4398": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-16T18:36:33+00:00",
+      "size": 393428
+    },
     "0933CA834B0AB98E": {
       "version": "rls-18.1.0.5286184.Set18.Shipping.pbe",
       "realms": [
@@ -331557,6 +332055,32 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-09-12T00:17:01+00:00",
       "size": 282163
+    },
+    "0C26ED065579B926": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.live",
+      "realms": [
+        "live-BR1",
+        "live-EUN1",
+        "live-EUW1",
+        "live-JP1",
+        "live-KR",
+        "live-LA1",
+        "live-LA2",
+        "live-ME1",
+        "live-NA1",
+        "live-OC1",
+        "live-RU",
+        "live-SG2",
+        "live-TR1",
+        "live-TW2",
+        "live-VN2"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-16T20:04:01+00:00",
+      "size": 561710
     },
     "0E9263A7437C47FA": {
       "version": "rls-18.2.0.5404469.Set18.Shipping.pbe",
@@ -331721,6 +332245,18 @@
       "timestamp": "2026-08-14T21:19:14+00:00",
       "size": 413275
     },
+    "15398164FA466A2F": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-16T18:36:29+00:00",
+      "size": 561528
+    },
     "165481F3345F15C8": {
       "version": "rls-18.1.0.5414854.Set18.Shipping.live",
       "realms": [
@@ -331746,6 +332282,18 @@
       "artifact_type": "client-TW",
       "timestamp": "2026-09-03T21:32:57+00:00",
       "size": 279643
+    },
+    "178D48F337EE0937": {
+      "version": "rls-18.5.0.5696099.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-13T19:27:19+00:00",
+      "size": 556035
     },
     "17F15EE8208F84DF": {
       "version": "rls-18.4.0.5537496.Set18FullPC.Shipping.pbe",
@@ -331979,6 +332527,18 @@
       "timestamp": "2026-08-13T18:43:12+00:00",
       "size": 405842
     },
+    "2325500218A5610E": {
+      "version": "rls-18.5.0.5696099.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-13T19:27:25+00:00",
+      "size": 453685
+    },
     "23F8316BDE25C160": {
       "version": "rls-18.1.0.5246719.Set18.Shipping.pbe",
       "realms": [
@@ -332054,6 +332614,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-08-21T22:35:44+00:00",
       "size": 248291
+    },
+    "26D8E51C7282D037": {
+      "version": "rls-18.5.0.5714532.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-15T22:35:25+00:00",
+      "size": 561208
     },
     "2716E8C59B359D65": {
       "version": "rls-18.4.0.5528276.Set18FullPC.Shipping.pbe",
@@ -332611,6 +333183,18 @@
       "timestamp": "2026-08-08T00:00:59+00:00",
       "size": 290413
     },
+    "3CEFBA1AFCA70F37": {
+      "version": "rls-18.5.0.5702416.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-14T16:10:51+00:00",
+      "size": 391138
+    },
     "3D923181EDB01CDD": {
       "version": "rls-18.4.0.5663767.Set18FullPC.Shipping.live",
       "realms": [
@@ -332714,6 +333298,18 @@
       "timestamp": "2026-09-04T22:00:18+00:00",
       "size": 296627
     },
+    "431DD995930873D0": {
+      "version": "rls-18.5.0.5714532.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-15T22:35:27+00:00",
+      "size": 457290
+    },
     "43B82998741C3563": {
       "version": "rls-18.1.0.5265981.Set18.Shipping.pbe",
       "realms": [
@@ -332737,6 +333333,18 @@
       "artifact_type": "client",
       "timestamp": "2026-10-07T20:40:06+00:00",
       "size": 422757
+    },
+    "445B7AB6CD99C67D": {
+      "version": "rls-18.5.0.5702416.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-14T16:10:53+00:00",
+      "size": 558988
     },
     "447AE368A9BB6D9A": {
       "version": "rls-18.5.0.5651585.Set18FullPC.Shipping.pbe",
@@ -333138,6 +333746,32 @@
       "timestamp": "2026-08-24T17:56:23+00:00",
       "size": 279959
     },
+    "57FBD50B529C50D7": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.live",
+      "realms": [
+        "live-BR1",
+        "live-EUN1",
+        "live-EUW1",
+        "live-JP1",
+        "live-KR",
+        "live-LA1",
+        "live-LA2",
+        "live-ME1",
+        "live-NA1",
+        "live-OC1",
+        "live-RU",
+        "live-SG2",
+        "live-TR1",
+        "live-TW2",
+        "live-VN2"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-16T20:04:01+00:00",
+      "size": 395022
+    },
     "585E237BD94176AF": {
       "version": "rls-18.5.0.5660512.Set18FullPC.Shipping.pbe",
       "realms": [
@@ -333324,6 +333958,18 @@
       "timestamp": "2026-08-21T23:31:04+00:00",
       "size": 242701
     },
+    "5FB451E544292F4A": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-16T18:36:32+00:00",
+      "size": 457004
+    },
     "600B5643ED67B502": {
       "version": "rls-18.1.0.5372836.Set18.Shipping.pbe",
       "realms": [
@@ -333347,6 +333993,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-07-30T19:13:38+00:00",
       "size": 259963
+    },
+    "624F78A37C5F6AAB": {
+      "version": "rls-18.5.0.5702416.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-14T16:10:55+00:00",
+      "size": 455015
     },
     "659FE07D6E1745A5": {
       "version": "rls-18.1.0.5283721.Set18.Shipping.pbe",
@@ -333493,6 +334151,18 @@
       "artifact_type": "client",
       "timestamp": "2026-09-17T16:36:42+00:00",
       "size": 472253
+    },
+    "74F54AA70E5E41B7": {
+      "version": "rls-18.5.0.5714532.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-15T22:35:29+00:00",
+      "size": 418145
     },
     "75ACA5BD102908A6": {
       "version": "rls-18.2.0.5450971.Set18.Shipping.pbe",
@@ -333762,6 +334432,32 @@
       "timestamp": "2026-09-16T17:35:30+00:00",
       "size": 343865
     },
+    "899510F9193F9413": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.live",
+      "realms": [
+        "live-BR1",
+        "live-EUN1",
+        "live-EUW1",
+        "live-JP1",
+        "live-KR",
+        "live-LA1",
+        "live-LA2",
+        "live-ME1",
+        "live-NA1",
+        "live-OC1",
+        "live-RU",
+        "live-SG2",
+        "live-TR1",
+        "live-TW2",
+        "live-VN2"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-16T20:04:00+00:00",
+      "size": 413270
+    },
     "8AB44EAD1B376050": {
       "version": "rls-18.2.0.5387545.Set18.Shipping.pbe",
       "realms": [
@@ -333773,6 +334469,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-08-26T17:53:25+00:00",
       "size": 252270
+    },
+    "8B3DA05D2D834CEC": {
+      "version": "rls-18.5.0.5687376.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Mac"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-12T18:25:04+00:00",
+      "size": 521172
     },
     "8B4639E5C3AF42E3": {
       "version": "rls-18.4.0.5606596.Set18FullPC.Shipping.pbe",
@@ -334030,6 +334738,18 @@
       "timestamp": "2026-08-13T18:44:49+00:00",
       "size": 350802
     },
+    "97C12F8FAA8E89DD": {
+      "version": "rls-18.5.0.5696099.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-13T19:27:27+00:00",
+      "size": 389376
+    },
     "980591729BAFC1F8": {
       "version": "rls-18.1.0.5366573.Set18.Shipping.pbe",
       "realms": [
@@ -334217,6 +334937,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-08-20T20:49:37+00:00",
       "size": 242861
+    },
+    "9DED14DA18C9B7E7": {
+      "version": "rls-18.5.0.5687376.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-12T18:25:06+00:00",
+      "size": 422831
     },
     "9E104A1984C3DB71": {
       "version": "rls-18.4.0.5537496.Set18FullPC.Shipping.pbe",
@@ -334631,6 +335363,18 @@
       "timestamp": "2026-08-24T23:44:15+00:00",
       "size": 280708
     },
+    "B6E725C2CA20AA14": {
+      "version": "rls-18.5.0.5687376.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-12T18:25:08+00:00",
+      "size": 386982
+    },
     "B7EF48A6418FA674": {
       "version": "rls-18.4.0.5644799.Set18FullPC.Shipping.live",
       "realms": [
@@ -334780,6 +335524,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-08-06T01:40:41+00:00",
       "size": 307064
+    },
+    "C35F8861EA8989D9": {
+      "version": "rls-18.5.0.5714532.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-15T22:35:30+00:00",
+      "size": 393178
     },
     "C629B0FA06FB0296": {
       "version": "rls-18.4.0.5577150.Set18FullPC.Shipping.pbe",
@@ -335148,6 +335904,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-08-18T21:41:31+00:00",
       "size": 231205
+    },
+    "DC5C65E4DA57ADC3": {
+      "version": "rls-18.5.0.5696099.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-13T19:27:18+00:00",
+      "size": 414380
     },
     "DC92554D1CE20D55": {
       "version": "rls-18.5.0.5675632.Set18FullPC.Shipping.pbe",
@@ -335519,6 +336287,18 @@
       "timestamp": "2026-09-28T18:02:55+00:00",
       "size": 364923
     },
+    "ED0CD8099699A9BE": {
+      "version": "rls-18.5.0.5687376.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "iOS"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-12T18:25:05+00:00",
+      "size": 360893
+    },
     "ED27BCFCF6487F69": {
       "version": "rls-18.2.0.5437412.Set18.Shipping.pbe",
       "realms": [
@@ -335530,6 +336310,18 @@
       "artifact_type": "client",
       "timestamp": "2026-09-03T03:43:30+00:00",
       "size": 328144
+    },
+    "ED35B12C995FE4A8": {
+      "version": "rls-18.5.0.5702416.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-14T16:10:57+00:00",
+      "size": 416379
     },
     "EF0E3C6BA8E1DEA8": {
       "version": "rls-18.4.0.5509638.Set18FullPC.Shipping.pbe",
@@ -335593,6 +336385,32 @@
       "timestamp": "2026-08-28T05:01:21+00:00",
       "size": 251758
     },
+    "F1589FDDC7D4B60A": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.live",
+      "realms": [
+        "live-BR1",
+        "live-EUN1",
+        "live-EUW1",
+        "live-JP1",
+        "live-KR",
+        "live-LA1",
+        "live-LA2",
+        "live-ME1",
+        "live-NA1",
+        "live-OC1",
+        "live-RU",
+        "live-SG2",
+        "live-TR1",
+        "live-TW2",
+        "live-VN2"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "client",
+      "timestamp": "2026-10-16T20:04:01+00:00",
+      "size": 454851
+    },
     "F21CD818E8E24CAA": {
       "version": "rls-18.1.0.5402721.Set18.Shipping.live",
       "realms": [
@@ -335654,6 +336472,18 @@
       "artifact_type": "streaminginstall",
       "timestamp": "2026-07-31T18:44:08+00:00",
       "size": 298038
+    },
+    "F7AB5BF65C055958": {
+      "version": "rls-18.5.0.5722094.Set18FullPC.Shipping.pbe",
+      "realms": [
+        "pbe-global"
+      ],
+      "platforms": [
+        "Android"
+      ],
+      "artifact_type": "streaminginstall",
+      "timestamp": "2026-10-16T18:36:30+00:00",
+      "size": 418167
     },
     "F9A0F56B2A0F292A": {
       "version": "rls-18.4.0.5637330.Set18FullPC.Shipping.pbe",
@@ -336376,6 +337206,23 @@
       "artifact_type": "valorant-client",
       "timestamp": "2025-02-19T08:52:31+00:00",
       "size": 21105584
+    },
+    "184402B23D952EB0": {
+      "version": "13.08.00.5627607",
+      "realms": [
+        "ap",
+        "br",
+        "eu",
+        "kr",
+        "latam",
+        "na"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "valorant-client",
+      "timestamp": "2026-10-01T22:45:38+00:00",
+      "size": 17328724
     },
     "18567B317C1233C9": {
       "version": "11.04.00.3710163",
@@ -341166,6 +342013,23 @@
       "artifact_type": "hotfix",
       "timestamp": "2025-06-03T22:25:21+00:00",
       "size": 21338
+    },
+    "D80C1E655919DF6E": {
+      "version": "13.08.00.5698904",
+      "realms": [
+        "ap",
+        "br",
+        "eu",
+        "kr",
+        "latam",
+        "na"
+      ],
+      "platforms": [
+        "Windows"
+      ],
+      "artifact_type": "valorant-client",
+      "timestamp": "2026-10-14T03:08:37+00:00",
+      "size": 17199965
     },
     "D8CD564EE22CEAC8": {
       "version": "09.01.00.2669223",
